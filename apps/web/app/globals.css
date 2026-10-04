@@ -621,3 +621,34 @@ a {
 .center {
   text-align: center;
 }
+
+/* ── 측정 표 ──────────────────────── */
+.funnel {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.funnel th,
+.funnel td {
+  padding: 12px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.funnel th {
+  font-size: 12.5px;
+  color: var(--sub);
+  font-weight: 500;
+}
+
+.funnel .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.funnel small {
+  color: var(--sub);
+}

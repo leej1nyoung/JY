@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { BIRTHPLACES } from '@naite/saju/birthplaces';
 import { Footer } from '@/components/Footer';
 import { Logo } from '@/components/Logo';
+import { TrackView } from '@/components/TrackView';
 import { WriteForm, type PlaceOption } from './WriteForm';
 
 export const metadata: Metadata = { title: '정보 입력 — 나이테' };
@@ -13,6 +14,7 @@ export default function WritePage() {
   const thisYear = new Date().getFullYear();
   return (
     <main className="page">
+      <TrackView event="write_view" />
       <header>
         <Logo />
       </header>

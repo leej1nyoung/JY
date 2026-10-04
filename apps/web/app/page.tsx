@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { Footer } from '@/components/Footer';
 import { Logo } from '@/components/Logo';
 import { Rings } from '@/components/Rings';
+import { TrackView } from '@/components/TrackView';
 
 export default function Home() {
   return (
     <main className="page">
+      <TrackView event="main_view" />
       <header>
         <Logo />
       </header>

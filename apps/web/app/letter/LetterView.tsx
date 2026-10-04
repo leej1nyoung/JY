@@ -3,14 +3,30 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { loadLetter, type StoredLetter } from '@/lib/letter-storage';
+import { track } from '@/lib/track';
 
 export function LetterView() {
   const [letter, setLetter] = useState<StoredLetter | null | undefined>(undefined);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const endRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     setLetter(loadLetter());
   }, []);
+
+  // 첫 장 끝(페이지 표시 "1 / 2")이 화면에 보이면 "끝까지 읽음"으로 한 번 기록
+  useEffect(() => {
+    const el = endRef.current;
+    if (!letter || !el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        track('letter_read_end');
+        io.disconnect();
+      }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [letter]);
 
   if (letter === undefined) return <div style={{ minHeight: '60vh' }} />;
 
@@ -43,7 +59,7 @@ export function LetterView() {
             {p}
           </p>
         ))}
-        <span className="page-mark">1 / 2</span>
+        <span className="page-mark" ref={endRef}>1 / 2</span>
       </article>
 
       {letter.notes.length > 0 && (
@@ -70,7 +86,11 @@ export function LetterView() {
           <br />
           그리고 마지막 당부 한 줄까지.
         </p>
-        <button className="btn" type="button" onClick={() => dialogRef.current?.showModal()}>
+        <button className="btn" type="button" onClick={() => {
+            track('pay_click');
+            dialogRef.current?.showModal();
+          }}
+        >
           선물 상자 열어보기 · 990원
         </button>
         <p className="refund-note">열람 후에는 환불이 제한돼요</p>

@@ -5,6 +5,7 @@ import { useMemo, useState, useTransition } from 'react';
 import type { FirstLetterField } from '@naite/letter';
 import { requestFirstLetter } from '../actions';
 import { saveLetter } from '@/lib/letter-storage';
+import { track } from '@/lib/track';
 
 export interface PlaceOption {
   code: string;
@@ -86,6 +87,7 @@ export function WriteForm({ places, maxYear }: { places: PlaceOption[]; maxYear:
         return;
       }
       saveLetter(res);
+      track('letter_created');
       router.push('/letter');
     });
   }
