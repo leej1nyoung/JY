@@ -4,7 +4,8 @@ import 'server-only';
 import type { TrackedEvent } from './events';
 
 function config() {
-  const url = process.env.SUPABASE_URL?.replace(/\/$/, '');
+  // 프로젝트 URL 만 필요하다. 실수로 붙여 넣은 /rest/v1/ 이나 끝의 / 는 떼어 낸다.
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const key = process.env.SUPABASE_SECRET_KEY;
   return url && key ? { url, key } : null;
 }
