@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STEMS, type Stem } from '@naite/saju';
+import { STEMS, THEME_AXES, type Stem, type TenGodGroup } from '@naite/saju';
 import {
   addMonths, birthdayInYear, birthdayKeyOf, composeFirstLetter, createFirstLetter, koreanInternationalAge,
   nextLetterBirthday, templates, todayInKorea, vocative, type FirstLetterRequest,
@@ -79,18 +79,14 @@ describe('첫해 첫 장 — CLAUDE.md 5-2 매핑 케이스', () => {
     expect(letter.meta.seun.stemTenGod).toBe('편관');
     expect(letter.meta.combination).toBe('둘 다 버거움');
   });
-  it('인사 → 세운 조각 → MBTI 조각 → 끊기', () => {
+  it('인사 → 비유 → 상황 → MBTI → 끊기', () => {
     expect(letter.greeting).toBe('진영아, 생일 축하해. 다음 생일의 나야.');
-    const [seun, mbti, cut] = letter.paragraphs;
-    expect(seun).toContain('쇠를 불로 두드려 모양을 잡는 해');
-    expect(templates.SITUATIONS.편관.some((s) => seun!.includes(s))).toBe(true);
-    expect(templates.SUB_SENTENCES.관성.some((s) => seun!.includes(s))).toBe(false); // 午는 같은 관성
-    // 관성 축 순서: J/P(P 버거움) → T/F(F 버거움) → "그래도" 마무리
-    const pIdx = Math.max(...templates.MBTI_SENTENCES.관성.P!.map((s) => mbti!.indexOf(s)));
-    const fIdx = Math.max(...templates.MBTI_SENTENCES.관성.F!.map((s) => mbti!.indexOf(s)));
-    expect(pIdx).toBeGreaterThanOrEqual(0);
-    expect(fIdx).toBeGreaterThan(pIdx);
-    expect(templates.BOTH_HARD_CLOSERS.some((s) => mbti!.endsWith(s))).toBe(true);
+    const [metaphor, situation, mbti, cut] = letter.paragraphs;
+    expect(metaphor).toContain('쇠를 불에 달궈 두드리던 해');
+    expect(metaphor).toContain(templates.METAPHORS.庚.관성.unpack);
+    expect(templates.SITUATIONS.편관).toContain(situation); // 午는 같은 관성이라 보조 문장 없음
+    // 관성 축은 J/P → T/F 순. INFP 는 P·F 로 둘 다 버거움
+    expect(templates.MBTI_PARAGRAPHS.관성.PF).toContain(mbti);
     expect(cut).toBe('그리고 이건 꼭 직접 말해주고 싶었어. 이번 1년 동안 네가 한 일 중에 내가 제일 고마운 건');
   });
   it('같은 사람이면 몇 번을 열어도 같은 편지', () => {
@@ -123,25 +119,47 @@ describe('전 조합 점검: 일간 10 × 세운 60갑자 × MBTI 16', () => {
             if (text.includes(w)) throw new Error(`"${w}" in ${y} ${stem} ${mbti}: ${text}`);
           }
           for (const p of l.paragraphs.slice(0, -1)) if (!/[.]$/.test(p)) throw new Error(p);
+          // 비유 문단 안에서 같은 말("보니", "한마디", "~더라")이 두 번 나오지 않는다
+          for (const w of ['보니', '한마디', '더라.']) {
+            if ((l.paragraphs[0]!.split(w).length - 1) > 1) throw new Error(`"${w}" twice: ${l.paragraphs[0]}`);
+          }
         }
       }
     }
     expect(seen.size).toBe(60);
   });
 
-  it('MBTI 문장 두 개의 말끝이 겹치지 않는다', () => {
-    for (const stem of STEMS) {
-      for (const mbti of MBTIS) {
-        const l = composeFirstLetter({ dayMaster: stem as Stem, mbti, name: null, today: d(2026, 10, 3), nextBirthday: d(2027, 2, 23), seedKey: stem + mbti });
-        const p = l.paragraphs[1]!;
-        expect(p.match(/거야\./g)?.length ?? 0, p).toBeGreaterThanOrEqual(1);
+  it('MBTI 문단이 테마마다 네 가지 조합을 모두 갖추고, 조합 규칙을 지킨다', () => {
+    for (const [theme, rules] of Object.entries(THEME_AXES) as [TenGodGroup, (typeof THEME_AXES)[TenGodGroup]][]) {
+      const keys = rules[0].axis && [rules[0].easy, rules[0].hard].flatMap((a) => [rules[1].easy, rules[1].hard].map((b) => a + b));
+      expect(Object.keys(templates.MBTI_PARAGRAPHS[theme]).sort()).toEqual([...keys].sort());
+      for (const key of keys) {
+        const hard = [key[0] === rules[0].hard, key[1] === rules[1].hard].filter(Boolean).length;
+        for (const p of templates.MBTI_PARAGRAPHS[theme][key]!) {
+          // 둘 다 버거움: 마지막 두 문장 안에 "그래도"
+          if (hard === 2) expect(p.split('. ').slice(-2).join('. '), p).toContain('그래도');
+          if (hard === 1) expect(p, p).toMatch(/그래도.*너라서 잘 해/);
+          if (hard === 0) expect(p, p).toMatch(/잘 맞는 해/);
+        }
       }
     }
   });
 
+  it('기억하는 말투: 남의 일을 짐작하는 "~을 거야"를 쓰지 않는다', () => {
+    const all = [
+      ...templates.OPENERS,
+      ...Object.values(templates.METAPHORS).flatMap((g) => Object.values(g).flatMap((x) => [x.m, x.unpack])),
+      ...Object.values(templates.SITUATIONS).flat(),
+      ...Object.values(templates.SUB_SENTENCES).flat(),
+      ...Object.values(templates.MBTI_PARAGRAPHS).flatMap((g) => Object.values(g).flat()),
+    ];
+    for (const t of all) expect(t, t).not.toMatch(/을 거[야예]/);
+  });
+
   it('비유 50종이 모두 서로 다르다', () => {
-    const all = Object.values(templates.METAPHORS).flatMap((g) => Object.values(g));
+    const all = Object.values(templates.METAPHORS).flatMap((g) => Object.values(g).map((x) => x.m));
     expect(all).toHaveLength(50);
+    for (const m of all) expect(m.endsWith('해'), m).toBe(true);
     expect(new Set(all).size).toBe(50);
   });
 });

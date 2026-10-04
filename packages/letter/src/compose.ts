@@ -1,14 +1,13 @@
 // 첫해 첫 장 조립. AI 를 쓰지 않는다 (CLAUDE.md 2, 5-2).
 import {
-  analyzeSeun, dominantSeun, mbtiFeelings, parseMbti, pillarText,
+  THEME_AXES, analyzeSeun, dominantSeun, mbtiFeelings, parseMbti, pillarText,
   type CivilDate, type Mbti, type SeunAnalysis, type Stem,
 } from '@naite/saju';
-import {
-  BOTH_EASY_OPENERS, BOTH_HARD_CLOSERS, CARELESS_MOMENTS, FIRST_YEAR_CUT, MBTI_SENTENCES,
-  METAPHORS, MIXED_CLOSERS, OPENERS, SITUATIONS, SUB_SENTENCES,
-} from './templates.ts';
+import { FIRST_YEAR_CUT, MBTI_PARAGRAPHS, METAPHORS, OPENERS, SITUATIONS, SUB_SENTENCES } from './templates.ts';
 
-export const TEMPLATE_VERSION = '1.0.0';
+export const TEMPLATE_VERSION = '2.0.0';
+
+const AXIS_INDEX = { 'E/I': 0, 'N/S': 1, 'T/F': 2, 'J/P': 3 } as const;
 
 export interface FirstLetterInput {
   dayMaster: Stem;
@@ -75,35 +74,23 @@ export function composeFirstLetter(input: FirstLetterInput): FirstLetter {
   // 1. 인사
   const greeting = name ? `${vocative(name)}, 생일 축하해. 다음 생일의 나야.` : '생일 축하해. 다음 생일의 나야.';
 
-  // 2. 세운 조각 (상황): 비유 + 정/편 톤 상황 문장 + (지지 그룹이 다르면) 보조 문장
-  const seunParagraph = [
-    pick(OPENERS, seed, 'opener').replace('{m}', METAPHORS[input.dayMaster][seun.theme]),
+  // 2. 세운 조각 (상황): 비유 + 풀이 / 정·편 톤 상황 + (지지 그룹이 다르면) 보조 한 줄
+  const metaphor = METAPHORS[input.dayMaster][seun.theme];
+  const metaphorParagraph = [pick(OPENERS, seed, 'opener').replace('{m}', metaphor.m), metaphor.unpack].join(' ');
+  const situationParagraph = [
     pick(SITUATIONS[seun.stemTenGod], seed, 'situation'),
     ...(seun.needsSubSentence ? [pick(SUB_SENTENCES[seun.branchGroup], seed, 'sub')] : []),
   ].join(' ');
 
-  // 3. MBTI 조각 (마음): 주 테마의 두 축, 조합 규칙
-  const { axes, combination } = mbtiFeelings(seun.theme, mbti);
-  // 축 문장은 버전 0이 "~거야.", 버전 1이 "~지."로 끝난다. 두 문장의 말끝이 겹치지 않도록 서로 다른 버전을 쓴다.
-  const firstVersion = hash(`${seed}#mbti`) % 2;
-  const sentence = (i: 0 | 1) => MBTI_SENTENCES[seun.theme][axes[i].side]![i === 0 ? firstVersion : 1 - firstVersion]!;
-  let mbtiParagraph: string;
-  if (combination === '둘 다 버거움') {
-    mbtiParagraph = [sentence(0), sentence(1), pick(BOTH_HARD_CLOSERS, seed, 'hard-closer')].join(' ');
-  } else if (combination === '하나 버거움 + 하나 편함') {
-    // axes 는 버거운 쪽이 먼저 온다
-    mbtiParagraph = [sentence(0), `그래도 ${sentence(1)}`, pick(MIXED_CLOSERS, seed, 'mixed-closer')].join(' ');
-  } else {
-    mbtiParagraph = [
-      pick(BOTH_EASY_OPENERS, seed, 'easy-opener'), sentence(0), sentence(1),
-      pick(CARELESS_MOMENTS[seun.theme], seed, 'careless'),
-    ].join(' ');
-  }
+  // 3. MBTI 조각 (마음): 주 테마의 두 축 글자 조합별 문단 (조합 규칙은 문단 안에 들어 있다)
+  const key = THEME_AXES[seun.theme].map((r) => mbti[AXIS_INDEX[r.axis]]).join('');
+  const mbtiParagraph = pick(MBTI_PARAGRAPHS[seun.theme][key]!, seed, 'mbti');
+  const { combination } = mbtiFeelings(seun.theme, mbti);
 
   // 4. 끊기 조각
   return {
     greeting,
-    paragraphs: [seunParagraph, mbtiParagraph, FIRST_YEAR_CUT],
+    paragraphs: [metaphorParagraph, situationParagraph, mbtiParagraph, FIRST_YEAR_CUT],
     cut: FIRST_YEAR_CUT,
     meta: {
       templateVersion: TEMPLATE_VERSION,
