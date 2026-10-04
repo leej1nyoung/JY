@@ -3,9 +3,9 @@ import {
   THEME_AXES, analyzeSeun, dominantSeun, mbtiFeelings, parseMbti, pillarText,
   type CivilDate, type Mbti, type SeunAnalysis, type Stem,
 } from '@naite/saju';
-import { FIRST_YEAR_CUT, MBTI_PARAGRAPHS, METAPHORS, OPENERS, SITUATIONS, SUB_SENTENCES } from './templates.ts';
+import { FIRST_YEAR_CUT, LEADS, MBTI_PARAGRAPHS, METAPHOR_FRAMES, METAPHORS, SITUATIONS, SUB_SENTENCES } from './templates.ts';
 
-export const TEMPLATE_VERSION = '2.0.0';
+export const TEMPLATE_VERSION = '2.1.0';
 
 const AXIS_INDEX = { 'E/I': 0, 'N/S': 1, 'T/F': 2, 'J/P': 3 } as const;
 
@@ -74,13 +74,15 @@ export function composeFirstLetter(input: FirstLetterInput): FirstLetter {
   // 1. 인사
   const greeting = name ? `${vocative(name)}, 생일 축하해. 다음 생일의 나야.` : '생일 축하해. 다음 생일의 나야.';
 
-  // 2. 세운 조각 (상황): 비유 + 풀이 / 정·편 톤 상황 + (지지 그룹이 다르면) 보조 한 줄
-  const metaphor = METAPHORS[input.dayMaster][seun.theme];
-  const metaphorParagraph = [pick(OPENERS, seed, 'opener').replace('{m}', metaphor.m), metaphor.unpack].join(' ');
+  // 2. 세운 조각 (상황): 담백한 첫마디 + 정·편 톤 상황 + (지지 그룹이 다르면) 보조 한 줄
+  //    → 비유는 있었던 일을 말한 뒤에 지나가듯 한 번 + 풀이 한 문장
   const situationParagraph = [
+    pick(LEADS, seed, 'lead'),
     pick(SITUATIONS[seun.stemTenGod], seed, 'situation'),
     ...(seun.needsSubSentence ? [pick(SUB_SENTENCES[seun.branchGroup], seed, 'sub')] : []),
   ].join(' ');
+  const metaphor = METAPHORS[input.dayMaster][seun.theme];
+  const metaphorParagraph = [pick(METAPHOR_FRAMES, seed, 'frame').replace('{m}', metaphor.m), metaphor.unpack].join(' ');
 
   // 3. MBTI 조각 (마음): 주 테마의 두 축 글자 조합별 문단 (조합 규칙은 문단 안에 들어 있다)
   const key = THEME_AXES[seun.theme].map((r) => mbti[AXIS_INDEX[r.axis]]).join('');
@@ -90,7 +92,7 @@ export function composeFirstLetter(input: FirstLetterInput): FirstLetter {
   // 4. 끊기 조각
   return {
     greeting,
-    paragraphs: [metaphorParagraph, situationParagraph, mbtiParagraph, FIRST_YEAR_CUT],
+    paragraphs: [situationParagraph, metaphorParagraph, mbtiParagraph, FIRST_YEAR_CUT],
     cut: FIRST_YEAR_CUT,
     meta: {
       templateVersion: TEMPLATE_VERSION,

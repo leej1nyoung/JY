@@ -79,12 +79,14 @@ describe('첫해 첫 장 — CLAUDE.md 5-2 매핑 케이스', () => {
     expect(letter.meta.seun.stemTenGod).toBe('편관');
     expect(letter.meta.combination).toBe('둘 다 버거움');
   });
-  it('인사 → 비유 → 상황 → MBTI → 끊기', () => {
+  it('인사 → 상황 → 비유 → MBTI → 끊기', () => {
     expect(letter.greeting).toBe('진영아, 생일 축하해. 다음 생일의 나야.');
-    const [metaphor, situation, mbti, cut] = letter.paragraphs;
-    expect(metaphor).toContain('쇠를 불에 달궈 두드리던 해');
+    const [situation, metaphor, mbti, cut] = letter.paragraphs;
+    expect(templates.LEADS.some((l) => situation!.startsWith(l))).toBe(true);
+    // 午는 같은 관성이라 보조 문장 없음: 첫마디 + 상황 한 덩어리로 끝난다
+    expect(templates.SITUATIONS.편관.some((t) => templates.LEADS.some((l) => situation === `${l} ${t}`))).toBe(true);
+    expect(metaphor).toContain('쇠를 불에 달궈 두드리던 시간');
     expect(metaphor).toContain(templates.METAPHORS.庚.관성.unpack);
-    expect(templates.SITUATIONS.편관).toContain(situation); // 午는 같은 관성이라 보조 문장 없음
     // 관성 축은 J/P → T/F 순. INFP 는 P·F 로 둘 다 버거움
     expect(templates.MBTI_PARAGRAPHS.관성.PF).toContain(mbti);
     expect(cut).toBe('그리고 이건 꼭 직접 말해주고 싶었어. 이번 1년 동안 네가 한 일 중에 내가 제일 고마운 건');
@@ -119,9 +121,13 @@ describe('전 조합 점검: 일간 10 × 세운 60갑자 × MBTI 16', () => {
             if (text.includes(w)) throw new Error(`"${w}" in ${y} ${stem} ${mbti}: ${text}`);
           }
           for (const p of l.paragraphs.slice(0, -1)) if (!/[.]$/.test(p)) throw new Error(p);
-          // 비유 문단 안에서 같은 말("보니", "한마디", "~더라")이 두 번 나오지 않는다
-          for (const w of ['보니', '한마디', '더라.']) {
-            if ((l.paragraphs[0]!.split(w).length - 1) > 1) throw new Error(`"${w}" twice: ${l.paragraphs[0]}`);
+          // 편지 전체에서 눈에 띄는 말이 반복되지 않는다
+          for (const w of ['시간이었', '빨리', '빠르']) {
+            if ((text.split(w).length - 1) > 1) throw new Error(`"${w}" repeated: ${text}`);
+          }
+          // 비유 문단 안에서 같은 말이 두 번 나오지 않는다
+          for (const w of ['보니', '한마디', '더라.', '시간이었']) {
+            if ((l.paragraphs[1]!.split(w).length - 1) > 1) throw new Error(`"${w}" twice: ${l.paragraphs[1]}`);
           }
         }
       }
@@ -147,7 +153,8 @@ describe('전 조합 점검: 일간 10 × 세운 60갑자 × MBTI 16', () => {
 
   it('기억하는 말투: 남의 일을 짐작하는 "~을 거야"를 쓰지 않는다', () => {
     const all = [
-      ...templates.OPENERS,
+      ...templates.LEADS,
+      ...templates.METAPHOR_FRAMES,
       ...Object.values(templates.METAPHORS).flatMap((g) => Object.values(g).flatMap((x) => [x.m, x.unpack])),
       ...Object.values(templates.SITUATIONS).flat(),
       ...Object.values(templates.SUB_SENTENCES).flat(),
@@ -159,7 +166,7 @@ describe('전 조합 점검: 일간 10 × 세운 60갑자 × MBTI 16', () => {
   it('비유 50종이 모두 서로 다르다', () => {
     const all = Object.values(templates.METAPHORS).flatMap((g) => Object.values(g).map((x) => x.m));
     expect(all).toHaveLength(50);
-    for (const m of all) expect(m.endsWith('해'), m).toBe(true);
+    for (const m of all) expect(m.endsWith(' 시간'), m).toBe(true);
     expect(new Set(all).size).toBe(50);
   });
 });
