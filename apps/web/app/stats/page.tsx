@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { timingSafeEqual } from 'node:crypto';
-import { buildFunnel, type FunnelRow } from '@/lib/events';
+import { WORTH, buildFunnel, type FunnelRow } from '@/lib/events';
 import { isStoreConfigured, loadCounts } from '@/lib/event-store';
 import { Logo } from '@/components/Logo';
 import { NoTrack } from './NoTrack';
@@ -28,11 +28,14 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   }
 
   let rows: FunnelRow[] | null = null;
+  let worth: { label: string; visitors: number }[] = [];
   let error: string | null = null;
   if (!isStoreConfigured()) error = 'Supabase 연결 정보(SUPABASE_URL, SUPABASE_SECRET_KEY)가 아직 설정되지 않았어요.';
   else {
     try {
-      rows = buildFunnel(await loadCounts());
+      const counts = await loadCounts();
+      rows = buildFunnel(counts);
+      worth = WORTH.map((w) => ({ label: w.label, visitors: counts.find((c) => c.event === w.event)?.visitors ?? 0 }));
     } catch (e) {
       error = `집계를 불러오지 못했어요. (${e instanceof Error ? e.message : '알 수 없는 오류'})`;
     }
@@ -67,6 +70,21 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             ))}
           </tbody>
         </table>
+      )}
+      {rows && (
+        <>
+          <h2 className="stats-sub">두 번째 장을 읽고 "990원 낼 만했어?"</h2>
+          <table className="funnel">
+            <tbody>
+              {worth.map((w) => (
+                <tr key={w.label}>
+                  <td>{w.label}</td>
+                  <td className="num">{w.visitors}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
     </main>
   );

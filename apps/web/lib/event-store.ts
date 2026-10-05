@@ -15,7 +15,8 @@ function config() {
 
 /** 값을 드러내지 않고 설정이 맞는지만 확인한다 */
 function checked(c: { url: string; key: string }): { url: string; key: string } {
-  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(c.url)) {
+  // 로컬 점검용 가짜 서버(http://localhost:포트)도 허용한다
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(c.url) && !/^http:\/\/localhost:\d+$/.test(c.url)) {
     throw new StoreConfigError(
       c.url.startsWith('sb_') || c.url.startsWith('eyJ')
         ? 'SUPABASE_URL 칸에 주소가 아니라 키가 들어 있어요. https://(프로젝트 ID).supabase.co 를 넣어 주세요.'

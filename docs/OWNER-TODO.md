@@ -81,9 +81,10 @@
   - 미성년자(만 14~18세) 결제 취소 처리 방식
   - 생일 알림 메일이 광고성 정보에 해당하는지
 
-### ☐ 10. Anthropic API 키 [필수]
+### ☐ 10. Anthropic API 키 [필수] — **지인 테스트(두 번째 장 무료 열람)부터 필요**
 - https://console.anthropic.com 에서 가입하고, 결제수단과 **월 사용 한도**를 설정한 뒤 키를 발급하세요.
-- 키는 저에게 채팅으로 보내지 말고, Vercel 환경변수에 직접 넣어 주세요. 이름은 그때 알려 드릴게요.
+- 키는 저에게 채팅으로 보내지 말고, Vercel 환경변수에 직접 넣어 주세요: `ANTHROPIC_API_KEY`, 그리고 `SECOND_PAGE_FREE` = `on`.
+- Supabase SQL Editor 에서 `db/migrations/002_second_page_events.sql` 도 한 번 실행해 주세요 (새 기록 이름 허용).
 
 ### ☐ 11. "MBTI" 표현 사용 확인 [권장]
 - MBTI는 미국 The Myers & Briggs Foundation의 등록상표예요. 서비스명에는 쓰지 않지만 화면과 홍보 문구에 쓰고 있어요.

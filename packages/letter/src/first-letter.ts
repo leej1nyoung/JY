@@ -1,6 +1,7 @@
 // 입력 폼 → 첫해 첫 장. 웹(서버)에서 이 함수 하나만 부른다. 아무것도 저장하지 않는다.
-import { calculateSaju, pillarKorean, pillarText, SajuInputError, type CivilDate } from '@naite/saju';
-import { composeFirstLetter, normalizeName, type FirstLetter } from './compose.ts';
+import { calculateSaju, pillarKorean, pillarText, SajuInputError, type CivilDate, type Stem } from '@naite/saju';
+import { composeFirstLetter, normalizeName, spanWord, type FirstLetter } from './compose.ts';
+import { buildSecondPageContext, followingBirthday, type SecondPageContext } from './second-page.ts';
 import { birthdayKeyOf, koreanInternationalAge, nextLetterBirthday, todayInKorea, type BirthdayBasis } from './cycle.ts';
 
 export const NAME_MAX_LENGTH = 10;
@@ -95,4 +96,27 @@ export function createFirstLetter(req: FirstLetterRequest, now: Date = new Date(
     birthDate: saju.time.solarDate,
   };
   return { ok: true, letter, nextBirthday, notes, stamp };
+}
+
+/**
+ * 두 번째 장 재료. 첫 장을 만든 순간(createdAt)으로 첫 장을 똑같이 다시 계산해서 쓴다.
+ * 브라우저가 보낸 첫 장 문장은 믿지 않는다 (입력값만 받아 서버에서 다시 만든다).
+ */
+export function createSecondPageContext(
+  req: FirstLetterRequest,
+  createdAt: Date,
+): { ok: true; context: SecondPageContext } | { ok: false; field: FirstLetterField; message: string } {
+  const first = createFirstLetter(req, createdAt);
+  if (!first.ok) return first;
+  const [y, m, d] = first.stamp.birthDate.split('-').map(Number) as [number, number, number];
+  const following = followingBirthday({ year: y, month: m, day: d }, req.birthdayBasis, first.nextBirthday);
+  const context = buildSecondPageContext({
+    dayMaster: first.stamp.dayPillar[0] as Stem,
+    mbti: req.mbti,
+    letter: first.letter,
+    nextBirthday: first.nextBirthday,
+    followingBirthday: following,
+    span: spanWord(first.letter.meta.period.from, first.nextBirthday),
+  });
+  return { ok: true, context };
 }

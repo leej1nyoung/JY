@@ -716,3 +716,54 @@ a {
 .funnel small {
   color: var(--sub);
 }
+
+/* ── 두 번째 장 (지인 테스트에서 무료 열람) ── */
+.paper-second {
+  margin-top: 28px;
+}
+
+.paper .request {
+  font-weight: 600;
+}
+
+.opening {
+  margin: 18px 0 0;
+  font-size: 14px;
+  color: var(--sub);
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.survey {
+  margin: 28px 0 0;
+  text-align: center;
+}
+
+.survey-q {
+  font-family: var(--font-letter), serif;
+  font-size: 17px;
+  color: var(--ink-strong);
+  margin: 0 0 14px;
+}
+
+.survey-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.survey-thanks {
+  font-size: 14.5px;
+  color: var(--sub);
+}
+
+.stats-sub {
+  font-size: 15px;
+  margin: 32px 0 8px;
+  color: var(--ink-strong);
+}

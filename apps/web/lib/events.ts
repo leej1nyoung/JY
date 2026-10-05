@@ -8,11 +8,19 @@ export const FUNNEL = [
   { event: 'letter_created', label: '입력 완료 (편지 받음)' },
   { event: 'letter_read_end', label: '첫 장 끝까지 읽음' },
   { event: 'pay_click', label: '결제 버튼 클릭' },
+  { event: 'second_page_view', label: '두 번째 장 열람 (테스트 무료)' },
 ] as const;
 
-export type EventName = (typeof FUNNEL)[number]['event'];
+/** 지인 테스트: 두 번째 장을 다 읽은 뒤 "990원 낼 만했어?" 답 */
+export const WORTH = [
+  { event: 'worth_yes', label: '응, 낼 만했어' },
+  { event: 'worth_unsure', label: '잘 모르겠어' },
+  { event: 'worth_no', label: '아니' },
+] as const;
 
-const NAMES = new Set<string>(FUNNEL.map((s) => s.event));
+export type EventName = (typeof FUNNEL)[number]['event'] | (typeof WORTH)[number]['event'];
+
+const NAMES = new Set<string>([...FUNNEL, ...WORTH].map((s) => s.event));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 export interface TrackedEvent {

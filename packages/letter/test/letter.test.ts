@@ -4,6 +4,7 @@ import {
   addMonths, birthdayInYear, chooseAnchor, isClash, isCombine, spanWord, birthdayKeyOf, composeFirstLetter, createFirstLetter, koreanInternationalAge,
   nextLetterBirthday, templates, todayInKorea, vocative, type FirstLetterRequest,
 } from '../src/index.ts';
+import * as rules from '../src/rules.ts';
 
 const d = (year: number, month: number, day: number) => ({ year, month, day });
 
@@ -115,16 +116,8 @@ describe('첫해 첫 장 — CLAUDE.md 5-2 매핑 케이스', () => {
 });
 
 const MBTIS = ['E', 'I'].flatMap((a) => ['N', 'S'].flatMap((b) => ['T', 'F'].flatMap((c) => ['J', 'P'].map((e) => a + b + c + e))));
-const BANNED = ['투자', '이직', '퇴사', '연애', '결혼', '이별', '건강', '병원', '수술', '죽', '반드시', '무조건'];
-const JARGON = ['비견', '겁재', '식신', '상관', '편재', '정재', '편관', '정관', '편인', '정인', '비겁', '식상', '재성', '관성', '인성', '일간', '세운', '오행', '십신', '월운'];
-/** 사람 글처럼 보이지 않게 만드는 상투어 (리뷰에서 지적된 AI 문체) */
-/** 직업·학업·가족 관계를 짐작하게 하는 말. 받는 사람은 학생일 수도, 쉬고 있을 수도, 가족이 없을 수도 있다 */
-const LIFE_ASSUMPTIONS = [
-  '회의', '회사', '출근', '퇴근', '상사', '동료', '팀장', '업무', '직장', '보고서', '발표', '출장', '야근', '사무실', '월급', '연봉', '거래처',
-  '프로젝트', '마감', '면접', '취업', '알바', '손님', '고객', '메일', '학교', '수업', '시험', '과제', '숙제', '선생님', '교수',
-  '엄마', '아빠', '부모', '남편', '아내', '남친', '여친', '애인', '자녀',
-];
-const AI_TELLS = ['너라서', '많이 애썼', '단단해졌', '나는 기억해', '다 기억해', '그 시간을 지나와서', '잘 맞는 해였', '마음 한쪽', '숨 돌릴 틈', '차곡차곡', '한 걸음씩', '오롯이', '선물 같', '쉼표'];
+const BANNED = rules.BANNED_WORDS;
+const { JARGON, AI_TELLS, LIFE_ASSUMPTIONS } = rules;
 
 /** 2026~2085년, 시작 달·기간을 바꿔 가며 편지를 만든다 */
 function* letters() {

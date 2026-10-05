@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import type { FirstLetterField } from '@naite/letter';
 import { requestFirstLetter } from '../actions';
-import { saveLetter } from '@/lib/letter-storage';
+import { clearSecondPage, saveLetter } from '@/lib/letter-storage';
 import { track } from '@/lib/track';
 
 export interface PlaceOption {
@@ -68,7 +68,7 @@ export function WriteForm({ places, maxYear }: { places: PlaceOption[]; maxYear:
     if (!complete || pending) return;
     setError(null);
     startTransition(async () => {
-      const res = await requestFirstLetter({
+      const request = {
         calendar,
         year: Number(year),
         month: Number(month),
@@ -81,12 +81,14 @@ export function WriteForm({ places, maxYear }: { places: PlaceOption[]; maxYear:
         birthdayBasis,
         confirmSelf,
         confirmAge,
-      });
+      };
+      const res = await requestFirstLetter(request);
       if (!res.ok) {
         setError({ field: res.field, message: res.message });
         return;
       }
-      saveLetter(res);
+      saveLetter({ ...res, request });
+      clearSecondPage(); // 새 편지를 받으면 이전 두 번째 장은 지운다
       track('letter_created');
       router.push('/letter');
     });

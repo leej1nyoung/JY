@@ -18,6 +18,14 @@ describe('이벤트 검사', () => {
   });
 });
 
+describe('두 번째 장 테스트 이벤트', () => {
+  it('열람과 "낼 만했어?" 답을 받는다', () => {
+    for (const event of ['second_page_view', 'worth_yes', 'worth_unsure', 'worth_no']) {
+      expect(parseEvent({ visitorId: ID, event, path: '/letter' })?.event).toBe(event);
+    }
+  });
+});
+
 describe('퍼널 계산', () => {
   it('단계 순서대로, 앞 단계·첫 단계 대비 비율', () => {
     const rows = buildFunnel([
@@ -26,6 +34,8 @@ describe('퍼널 계산', () => {
       { event: 'write_view', visitors: 12, total: 15 },
       { event: 'letter_created', visitors: 10, total: 10 },
       { event: 'letter_read_end', visitors: 8, total: 9 },
+      { event: 'second_page_view', visitors: 2, total: 2 },
+      { event: 'worth_yes', visitors: 1, total: 1 },
     ]);
     expect(rows.map((r) => [r.event, r.visitors, r.fromPrev, r.fromFirst])).toEqual([
       ['main_view', 20, null, null],
@@ -33,6 +43,7 @@ describe('퍼널 계산', () => {
       ['letter_created', 10, 83.3, 50],
       ['letter_read_end', 8, 80, 40],
       ['pay_click', 3, 37.5, 15],
+      ['second_page_view', 2, 66.7, 10],
     ]);
   });
   it('기록이 없으면 0, 나눌 수 없으면 null', () => {
