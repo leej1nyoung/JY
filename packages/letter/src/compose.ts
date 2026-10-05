@@ -9,7 +9,7 @@ import {
   BODIES, CUTS, FLAVORS, HOOKS, METAPHOR_FRAMES, METAPHORS, NOW_LINES, SEASON, SEASON_BRIDGES, SUB_SENTENCES, WHEN_IPCHUN, WHEN_NONE,
 } from './templates.ts';
 
-export const TEMPLATE_VERSION = '3.1.0';
+export const TEMPLATE_VERSION = '3.2.0';
 
 const AXIS_INDEX = { 'E/I': 0, 'N/S': 1, 'T/F': 2, 'J/P': 3 } as const;
 
@@ -153,6 +153,7 @@ export function composeFirstLetter(input: FirstLetterInput): FirstLetter {
     .replace('{date}', `${readMonth}월 ${kst.getUTCDate()}일`)
     .replace('{weekday}', WEEKDAYS[kst.getUTCDay()]!)
     .replace('{time이지}', josa(time, '이지', '지'))
+    .replace('{time이네}', josa(time, '이네', '네'))
     .replace('{time}', time)
     .replace('{now}', pick(NOW_LINES[readMonth]!, seed, 'now'))
     .replace('{span이나}', josa(span, '이나', '나'))
