@@ -52,7 +52,9 @@ async function once(ctx: SecondPageContext, problems: string[]): Promise<unknown
 export async function generateSecondPage(ctx: SecondPageContext): Promise<SecondPage> {
   let problems: string[] = [];
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const started = Date.now();
     const checked = checkSecondPage(await once(ctx, problems), ctx);
+    console.log('[second-page] attempt', attempt, `${Math.round((Date.now() - started) / 1000)}s`, checked.problems.length === 0 ? 'ok' : 'rejected');
     if (checked.page && checked.problems.length === 0) return checked.page;
     problems = checked.problems;
     console.warn('[second-page] retry', attempt, problems.join(' / '));

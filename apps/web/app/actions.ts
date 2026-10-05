@@ -81,7 +81,9 @@ export async function requestSecondPage(raw: unknown, createdAtIso: unknown): Pr
     if (!ctx.ok) return fail(ctx.message);
     return { ok: true, page: await generateSecondPage(ctx.context) };
   } catch (e) {
-    console.error('[second-page]', e instanceof SecondPageError ? e.message : e instanceof Error ? e.name : 'unknown');
+    // 원인을 Vercel 로그에서 볼 수 있게 남긴다 (API 오류는 상태 코드와 이름만, 입력값은 남기지 않는다)
+    const detail = e instanceof SecondPageError ? e.message : e instanceof Error ? `${e.name}${'status' in e ? ` ${String((e as { status?: unknown }).status)}` : ''}` : 'unknown';
+    console.error('[second-page] failed:', detail);
     return fail('두 번째 장을 쓰다가 문제가 생겼어요. 잠시 뒤에 다시 열어 주세요.');
   }
 }

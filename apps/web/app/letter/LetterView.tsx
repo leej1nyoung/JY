@@ -38,7 +38,14 @@ export function LetterView({ secondPageFree = false }: { secondPageFree?: boolea
     }
     setSecondError(null);
     startOpening(async () => {
-      const res = await requestSecondPage(letter.request, letter.createdAt);
+      let res: Awaited<ReturnType<typeof requestSecondPage>>;
+      try {
+        res = await requestSecondPage(letter.request, letter.createdAt);
+      } catch {
+        // 서버 시간 초과·연결 끊김 등. 아무 말 없이 버튼으로 돌아가지 않게 안내한다
+        setSecondError('두 번째 장을 쓰는 데 시간이 너무 걸렸어요. 잠시 뒤에 다시 열어 주세요.');
+        return;
+      }
       if (!res.ok) {
         setSecondError(res.message);
         return;
