@@ -10,6 +10,12 @@ import { WORTH } from '@/lib/events';
 
 const WORTH_KEY = 'naite:worth-answered';
 
+/** 오방색 칩 색상 (ELEMENT_COLORS 의 이름과 같아야 한다) */
+const COLOR_SWATCH: Record<string, string> = {
+  초록: '#5E9E6E', 연두: '#A8D08D', 빨강: '#D9534F', 주황: '#F0A04B', 노랑: '#F2D16B',
+  베이지: '#E3D3B8', 흰색: '#FFFFFF', 은색: '#C9CED6', 남색: '#2F3E73', 검정: '#2B2B2B',
+};
+
 export function LetterView({ secondPageFree: initialFree = false }: { secondPageFree?: boolean }) {
   const [secondPageFree, setSecondPageFree] = useState(initialFree);
   const [letter, setLetter] = useState<StoredLetter | null | undefined>(undefined);
@@ -23,7 +29,9 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
 
   useEffect(() => {
     setLetter(loadLetter());
-    setSecond(loadSecondPage());
+    const saved = loadSecondPage();
+    // 예전 형식(맨 위 한 줄·색 카드가 없는)으로 저장된 두 번째 장은 다시 열게 한다
+    setSecond(saved && typeof saved.headline === 'string' && saved.keep ? saved : null);
     // 서버가 그린 값이 꺼짐이어도 한 번 더 확인한다 (카카오톡 등에서 오래된 화면이 남아 있는 경우)
     secondPageAvailable()
       .then((on) => on && setSecondPageFree(true))
@@ -141,6 +149,7 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
       {second ? (
         <>
           <article className="paper paper-second" aria-label="편지 두 번째 장" ref={secondRef}>
+            <p className="headline">{second.headline}</p>
             {second.moment.map((p, i) => (
               <p key={`m${i}`}>{i === 0 ? `…${p}` : p}</p>
             ))}
@@ -150,6 +159,27 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
             <p className="request">{second.request}</p>
             <span className="page-mark">2 / 2</span>
           </article>
+
+          <section className="keep-card" aria-label="다음 생일까지">
+            <h2 className="keep-title">다음 생일까지</h2>
+            <div className="keep-row">
+              <span className="keep-label">곁에 두면 좋은 색</span>
+              <p className="keep-colors">
+                {second.keep.colors.map((c) => (
+                  <span key={c} className="color-chip">
+                    <span className="color-dot" style={{ background: COLOR_SWATCH[c] ?? '#ccc' }} aria-hidden="true" />
+                    {c}
+                  </span>
+                ))}
+              </p>
+              <p className="keep-why">{second.keep.why}이래.</p>
+              <p className="keep-text">{second.keep.note}</p>
+            </div>
+            <div className="keep-row">
+              <span className="keep-label">마음가짐</span>
+              <p className="keep-text">{second.mindset}</p>
+            </div>
+          </section>
 
           {secondPageFree && (
             <section className="survey" aria-label="짧은 질문">
@@ -188,6 +218,7 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
               {b.month}월 {b.day}일 생일부터 1년, 달라지는 흐름
             </li>
             <li>미래의 내가 꼭 부탁하고 싶은 한 가지</li>
+            <li>다음 생일까지 곁에 두면 좋은 색과 마음가짐</li>
           </ol>
           <p className="peek" aria-hidden="true">
             {/* 흐린 부분은 실제 두 번째 장 내용이 아니라 자리만 보여 주는 안내 문장이다 (내용을 지어내 보여 주지 않는다) */}
