@@ -6,7 +6,7 @@ import {
 } from '@naite/saju';
 import { calendarMonthsIn, chooseAnchor, type Anchor } from './anchor.ts';
 import {
-  BODIES, CUTS, FLAVORS, HOOKS, METAPHOR_FRAMES, METAPHORS, NOW_LINES, SEASON, SUB_SENTENCES, WHEN_IPCHUN, WHEN_NONE,
+  BODIES, CUTS, FLAVORS, HOOKS, METAPHOR_FRAMES, METAPHORS, NOW_LINES, SEASON, SEASON_BRIDGES, SUB_SENTENCES, WHEN_IPCHUN, WHEN_NONE,
 } from './templates.ts';
 
 export const TEMPLATE_VERSION = '3.1.0';
@@ -173,10 +173,12 @@ export function composeFirstLetter(input: FirstLetterInput): FirstLetter {
   const months = calendarMonthsIn(input.today, input.nextBirthday).filter((m) => m !== anchorMonth && m !== readMonth);
   const seasonMonth = months.length > 0 ? pick(months, seed, 'season-month') : null;
   const season = seasonMonth === null ? '' : pick(SEASON[seasonMonth]!, seed, 'season');
+  // 감정부터 시작하는 버전은 계절 디테일이 본문 중간에 혼자 떠 있지 않도록 딴소리를 꺼내는 말로 잇는다
+  const seasonLine = season && variant === 1 ? pick(SEASON_BRIDGES, seed, 'bridge') + season : season;
 
   const body = variants[variant]!
     .replace('{m}', pick(METAPHOR_FRAMES, seed, 'frame').replace('{m}', METAPHORS[input.dayMaster][seun.theme]))
-    .replace('{season}', season)
+    .replace('{season}', seasonLine)
     .replace('{sub}', seun.needsSubSentence ? pick(SUB_SENTENCES[seun.branchGroup], seed, 'sub') : '')
     // 본문은 "1년"으로 써 두고, 실제 기간이 짧으면 "넉 달"처럼 바꾼다 (년·달 모두 받침이 있어 조사가 같다)
     .replaceAll('1년', span);

@@ -185,7 +185,7 @@ describe('전 조합 점검: 일간 10 × 60년 × MBTI 16 (9,600통)', () => {
         const [v0, v1, v2] = bodies[key]!;
         count += 3;
         expect(v0, `${god} ${key} v0`).toContain('{m}'); // 상황부터 + 비유
-        expect(v1, `${god} ${key} v1`).toContain('{season}'); // 감정부터 + 계절
+        expect(v1!.endsWith('{season}'), `${god} ${key} v1`).toBe(true); // 감정부터 + 끝에 계절 딴소리
         expect(v2!.startsWith('{season}'), `${god} ${key} v2`).toBe(true); // 계절부터
         for (const v of [v0, v1, v2]) {
           expect(v, `${god} ${key}`).toContain('{sub}');
