@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Footer } from '@/components/Footer';
 import { Logo } from '@/components/Logo';
-import { isSecondPageEnabled } from '@/lib/second-page-ai';
+import { secondPageStatus } from '@/lib/second-page-ai';
 import { LetterView } from './LetterView';
 
 export const metadata: Metadata = { title: '내년의 안부 — 나이테' };
@@ -10,12 +10,14 @@ export const maxDuration = 180;
 export const dynamic = 'force-dynamic';
 
 export default function LetterPage() {
+  const status = secondPageStatus();
+  console.log('[letter] render, second page:', status.reason);
   return (
     <main className="page">
       <header>
         <Logo />
       </header>
-      <LetterView secondPageFree={isSecondPageEnabled()} />
+      <LetterView secondPageFree={status.enabled} />
       <Footer />
     </main>
   );

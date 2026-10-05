@@ -3,14 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { SecondPage } from '@naite/letter';
-import { requestSecondPage } from '@/app/actions';
+import { requestSecondPage, secondPageAvailable } from '@/app/actions';
 import { loadLetter, loadSecondPage, saveSecondPage, type StoredLetter } from '@/lib/letter-storage';
 import { track } from '@/lib/track';
 import { WORTH } from '@/lib/events';
 
 const WORTH_KEY = 'naite:worth-answered';
 
-export function LetterView({ secondPageFree = false }: { secondPageFree?: boolean }) {
+export function LetterView({ secondPageFree: initialFree = false }: { secondPageFree?: boolean }) {
+  const [secondPageFree, setSecondPageFree] = useState(initialFree);
   const [letter, setLetter] = useState<StoredLetter | null | undefined>(undefined);
   const [second, setSecond] = useState<SecondPage | null>(null);
   const [secondError, setSecondError] = useState<string | null>(null);
@@ -23,6 +24,10 @@ export function LetterView({ secondPageFree = false }: { secondPageFree?: boolea
   useEffect(() => {
     setLetter(loadLetter());
     setSecond(loadSecondPage());
+    // 서버가 그린 값이 꺼짐이어도 한 번 더 확인한다 (카카오톡 등에서 오래된 화면이 남아 있는 경우)
+    secondPageAvailable()
+      .then((on) => on && setSecondPageFree(true))
+      .catch(() => {});
     try {
       setAnswered(sessionStorage.getItem(WORTH_KEY) === '1');
     } catch {

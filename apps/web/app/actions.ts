@@ -1,7 +1,7 @@
 'use server';
 
 import { createFirstLetter, createSecondPageContext, type FirstLetterRequest, type FirstLetterResponse, type SecondPage } from '@naite/letter';
-import { SecondPageError, generateSecondPage, isSecondPageEnabled } from '@/lib/second-page-ai';
+import { SecondPageError, generateSecondPage, isSecondPageEnabled, secondPageStatus } from '@/lib/second-page-ai';
 
 // 입력값은 계산에만 쓰고 저장·로그하지 않는다 (CLAUDE.md 6: 미결제자 정보는 보관하지 않음).
 // 클라이언트에서 온 값은 신뢰하지 않고 형태를 다시 확인한다.
@@ -88,3 +88,10 @@ export async function requestSecondPage(raw: unknown, createdAtIso: unknown): Pr
   }
 }
 
+
+/** 편지 화면이 열릴 때 두 번째 장 무료 열람이 켜져 있는지 서버에 직접 묻는다 (화면이 오래된 경우 대비) */
+export async function secondPageAvailable(): Promise<boolean> {
+  const status = secondPageStatus();
+  console.log('[second-page] status:', status.reason);
+  return status.enabled;
+}
