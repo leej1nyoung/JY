@@ -13,13 +13,25 @@ const MAX_ATTEMPTS = 2;
 
 export class SecondPageError extends Error {}
 
+/** 환경변수 값을 드러내지 않고 켜짐 여부와 이유만 알려 준다 (/stats 에 표시) */
+export function secondPageStatus(): { enabled: boolean; reason: string } {
+  // 공백·따옴표·대문자로 넣어도 켜지게 한다 ("On", " on", "\"on\"", true, 1)
+  const flag = (process.env.SECOND_PAGE_FREE ?? '').trim().replace(/^["']|["']$/g, '').toLowerCase();
+  const on = ['on', 'true', '1', 'yes'].includes(flag);
+  const key = (process.env.ANTHROPIC_API_KEY ?? '').trim();
+  if (!on) return { enabled: false, reason: flag ? 'SECOND_PAGE_FREE 값이 on 이 아니에요' : 'SECOND_PAGE_FREE 가 없어요' };
+  if (!key) return { enabled: false, reason: 'ANTHROPIC_API_KEY 가 없어요' };
+  if (!key.startsWith('sk-ant-')) return { enabled: true, reason: '켜져 있어요 (다만 ANTHROPIC_API_KEY 가 보통의 sk-ant- 형식이 아니에요. 키를 다시 확인해 주세요)' };
+  return { enabled: true, reason: '켜져 있어요' };
+}
+
 export function isSecondPageEnabled(): boolean {
-  return process.env.SECOND_PAGE_FREE === 'on' && Boolean(process.env.ANTHROPIC_API_KEY);
+  return secondPageStatus().enabled;
 }
 
 let client: Anthropic | null = null;
 function anthropic(): Anthropic {
-  client ??= new Anthropic();
+  client ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() });
   return client;
 }
 

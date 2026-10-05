@@ -4,6 +4,7 @@ import { WORTH, buildFunnel, type FunnelRow } from '@/lib/events';
 import { isStoreConfigured, loadCounts } from '@/lib/event-store';
 import { Logo } from '@/components/Logo';
 import { NoTrack } from './NoTrack';
+import { secondPageStatus } from '@/lib/second-page-ai';
 
 export const metadata: Metadata = { title: '측정 — 나이테' };
 export const dynamic = 'force-dynamic';
@@ -47,6 +48,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       <h1 className="form-title">지인 테스트 측정</h1>
       <p className="form-lead">방문자 수는 같은 브라우저를 한 명으로 셉니다. 비율은 바로 앞 단계 대비, 괄호는 메인 진입 대비예요.</p>
       <NoTrack />
+      <p className="form-lead">두 번째 장 무료 열람: {secondPageStatus().reason}</p>
       {error && <p className="error">{error}</p>}
       {rows && (
         <table className="funnel">
