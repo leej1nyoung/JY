@@ -1,5 +1,5 @@
 // 입력 폼 → 첫해 첫 장. 웹(서버)에서 이 함수 하나만 부른다. 아무것도 저장하지 않는다.
-import { calculateSaju, pillarKorean, pillarText, SajuInputError, type CivilDate, type Stem } from '@naite/saju';
+import { calculateSaju, pillarKorean, pillarText, SajuInputError, type Branch, type CivilDate, type Stem } from '@naite/saju';
 import { composeFirstLetter, normalizeName, spanWord, type FirstLetter } from './compose.ts';
 import { buildSecondPageContext, followingBirthday, type SecondPageContext } from './second-page.ts';
 import { birthdayKeyOf, koreanInternationalAge, nextLetterBirthday, todayInKorea, type BirthdayBasis } from './cycle.ts';
@@ -112,6 +112,7 @@ export function createSecondPageContext(
   const following = followingBirthday({ year: y, month: m, day: d }, req.birthdayBasis, first.nextBirthday);
   const context = buildSecondPageContext({
     dayMaster: first.stamp.dayPillar[0] as Stem,
+    dayBranch: first.stamp.dayPillar[1] as Branch,
     mbti: req.mbti,
     letter: first.letter,
     nextBirthday: first.nextBirthday,

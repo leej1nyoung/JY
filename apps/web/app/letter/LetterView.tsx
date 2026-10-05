@@ -10,26 +10,6 @@ import { WORTH } from '@/lib/events';
 
 const WORTH_KEY = 'naite:worth-answered';
 
-/** 오방색 칩 색상 (ELEMENT_COLORS 의 이름과 같아야 한다) */
-const COLOR_SWATCH: Record<string, string> = {
-  초록: '#5E9E6E', 연두: '#A8D08D', 빨강: '#D9534F', 주황: '#F0A04B', 노랑: '#F2D16B',
-  베이지: '#E3D3B8', 흰색: '#FFFFFF', 은색: '#C9CED6', 남색: '#2F3E73', 검정: '#2B2B2B',
-};
-
-/** 문장 속 색 이름 앞에 작은 색 점을 찍는다 (편지 문장은 그대로 두고 눈에만 띄게) */
-function withColorDots(text: string, colors: readonly string[]): React.ReactNode[] {
-  const re = new RegExp(`(${colors.map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
-  return text.split(re).map((part, i) =>
-    colors.includes(part) ? (
-      <span key={i} className="color-word">
-        <span className="color-dot" style={{ background: COLOR_SWATCH[part] ?? '#ccc' }} aria-hidden="true" />
-        {part}
-      </span>
-    ) : (
-      part
-    ),
-  );
-}
 
 export function LetterView({ secondPageFree: initialFree = false }: { secondPageFree?: boolean }) {
   const [secondPageFree, setSecondPageFree] = useState(initialFree);
@@ -46,7 +26,7 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
     setLetter(loadLetter());
     const saved = loadSecondPage();
     // 예전 형식으로 저장된 두 번째 장은 다시 열게 한다
-    setSecond(saved && typeof saved.headline === 'string' && Array.isArray(saved.until) ? saved : null);
+    setSecond(saved && typeof saved.headline === 'string' && Array.isArray(saved.guide) ? saved : null);
     // 서버가 그린 값이 꺼짐이어도 한 번 더 확인한다 (카카오톡 등에서 오래된 화면이 남아 있는 경우)
     secondPageAvailable()
       .then((on) => on && setSecondPageFree(true))
@@ -168,8 +148,8 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
             {second.moment.map((p, i) => (
               <p key={`m${i}`}>{i === 0 ? `…${p}` : p}</p>
             ))}
-            {second.until.map((p, i) => (
-              <p key={`u${i}`}>{withColorDots(p, second.colors)}</p>
+            {second.guide.map((p, i) => (
+              <p key={`g${i}`}>{p}</p>
             ))}
             {second.flow.map((p, i) => (
               <p key={`f${i}`}>{p}</p>
@@ -212,7 +192,7 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
           <p className="envelope-text">봉투 안에 한 장이 더 있어</p>
           <ol className="envelope-list">
             <li>{momentLabel}, 그날 네가 한 일</li>
-            <li>다음 생일까지 곁에 두면 좋은 색과 마음가짐</li>
+            <li>다음 생일까지 꼭 알아 둘 것</li>
             <li>
               {b.month}월 {b.day}일 생일부터 1년, 달라지는 흐름
             </li>

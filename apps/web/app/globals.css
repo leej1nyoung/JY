@@ -773,18 +773,3 @@ a {
   font-size: 19px;
   color: var(--ink-strong);
 }
-
-/* 편지 문장 속 색 이름 */
-.color-word {
-  white-space: nowrap;
-}
-
-.color-word .color-dot {
-  display: inline-block;
-  width: 0.7em;
-  height: 0.7em;
-  margin: 0 3px 0 1px;
-  border-radius: 50%;
-  border: 1px solid rgba(62, 42, 71, 0.2);
-  vertical-align: 0.02em;
-}
