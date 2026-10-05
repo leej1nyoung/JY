@@ -17,6 +17,26 @@ function headers(key: string): Record<string, string> {
   return h;
 }
 
+/** 키 종류 (오류 안내용, 키 값 자체는 드러내지 않는다) */
+function keyKind(key: string): string {
+  if (key.startsWith('sb_secret_')) return 'secret';
+  if (key.startsWith('sb_publishable_')) return 'publishable — secret 키가 아니에요';
+  if (key.startsWith('eyJ')) return 'legacy JWT — service_role 키여야 해요';
+  return '알 수 없는 형식';
+}
+
+/** PostgREST 오류 응답의 message 를 짧게 붙인다 */
+async function failure(label: string, res: Response, key: string): Promise<Error> {
+  let detail = '';
+  try {
+    const body = (await res.json()) as { message?: string };
+    if (body.message) detail = ` ${body.message.slice(0, 160)}`;
+  } catch {
+    // 본문이 JSON 이 아니면 상태 코드만 쓴다
+  }
+  return new Error(`${label}: ${res.status}${detail} (키 종류: ${keyKind(key)})`);
+}
+
 export function isStoreConfigured(): boolean {
   return config() !== null;
 }
@@ -30,7 +50,7 @@ export async function saveEvent(e: TrackedEvent): Promise<void> {
     body: JSON.stringify({ visitor_id: e.visitorId, event: e.event, path: e.path }),
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error(`event insert failed: ${res.status}`);
+  if (!res.ok) throw await failure('event insert failed', res, c.key);
 }
 
 export async function loadCounts(): Promise<{ event: string; visitors: number; total: number }[]> {
@@ -40,7 +60,7 @@ export async function loadCounts(): Promise<{ event: string; visitors: number; t
     headers: headers(c.key),
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error(`funnel query failed: ${res.status}`);
+  if (!res.ok) throw await failure('funnel query failed', res, c.key);
   const rows = (await res.json()) as { event: string; visitors: number | string; total: number | string }[];
   return rows.map((r) => ({ event: r.event, visitors: Number(r.visitors), total: Number(r.total) }));
 }

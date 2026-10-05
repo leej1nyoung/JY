@@ -23,3 +23,9 @@ create or replace view public.event_funnel with (security_invoker = true) as
 
 revoke all on public.events from anon, authenticated;
 revoke all on public.event_funnel from anon, authenticated;
+
+-- 서버(secret 키 = service_role)에 필요한 권한을 명시한다.
+-- 프로젝트에 따라 public 스키마 새 표에 자동 권한이 붙지 않을 수 있어서 직접 준다. 여러 번 실행해도 된다.
+grant usage on schema public to service_role;
+grant select, insert on public.events to service_role;
+grant select on public.event_funnel to service_role;
