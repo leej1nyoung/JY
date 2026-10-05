@@ -42,9 +42,13 @@ export function LetterView() {
     );
   }
 
-  const { greeting, paragraphs } = letter.letter;
+  const { greeting, paragraphs, moment } = letter.letter;
   const b = letter.nextBirthday;
   const last = paragraphs.length - 1;
+  const stamp = letter.stamp;
+  // 봉투 미리보기 첫 줄: "진영아, 11월 말이야." (이름이 없으면 "있잖아,")
+  const callName = greeting.startsWith('생일') ? '있잖아' : greeting.split(',')[0];
+  const momentLabel = moment?.label ?? '1년 중 어느 날';
 
   return (
     <>
@@ -53,6 +57,12 @@ export function LetterView() {
       </p>
 
       <article className="paper" aria-label="편지 첫 장">
+        {stamp && (
+          <div className="stamp" aria-label={`${stamp.dayPillarKo}일주, ${stamp.birthDate} 생`}>
+            <span className="stamp-pillar">{stamp.dayPillar}</span>
+            <span className="stamp-date">{stamp.birthDate.replaceAll('-', '.')}</span>
+          </div>
+        )}
         <p>{greeting}</p>
         {paragraphs.map((p, i) => (
           <p key={i} className={i === last ? 'cut' : undefined}>
@@ -80,11 +90,18 @@ export function LetterView() {
           <div className="body" />
           <div className="label">두 번째 장</div>
         </div>
-        <p className="envelope-text">봉투 안에 한 장이 더 남아 있어</p>
-        <p className="envelope-sub">
-          이번 1년 동안 가장 고마웠던 일, 다가오는 흐름,
-          <br />
-          그리고 마지막 당부 한 줄까지.
+        <p className="envelope-text">봉투 안에 한 장이 더 있어</p>
+        <ol className="envelope-list">
+          <li>{momentLabel}, 그날 네가 한 일</li>
+          <li>
+            {b.month}월 {b.day}일 생일부터 1년, 달라지는 흐름
+          </li>
+          <li>미래의 내가 꼭 부탁하고 싶은 한 가지</li>
+        </ol>
+        <p className="peek" aria-hidden="true">
+          {/* 흐린 부분은 실제 두 번째 장 내용이 아니라 자리만 보여 주는 안내 문장이다 (내용을 지어내 보여 주지 않는다) */}
+          {callName}, {momentLabel.replace(/^1년 중 /, '')} 말이야. 너는 <span className="blur">그날 있었던 일을 여기에 적어 둘게.</span>{' '}
+          <span className="blur">두 번째 장에서 이어서 말할게.</span>
         </p>
         <button className="btn" type="button" onClick={() => {
             track('pay_click');

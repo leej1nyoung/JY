@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { composeFirstLetter } from '@naite/letter';
-import { STEMS, THEME_AXES, analyzeSeun, type Stem } from '@naite/saju';
+import { BRANCHES, STEMS, THEME_AXES, analyzeSeun, type Stem } from '@naite/saju';
 import { Logo } from '@/components/Logo';
 
 // 문장 검토용 페이지 (지인 테스트 전까지만). 정식 런칭 전에 지운다.
@@ -29,7 +29,7 @@ export default function PreviewPage() {
     mbtiCombos(stem).map((mbti) => ({
       stem,
       mbti,
-      letter: composeFirstLetter({ dayMaster: stem, mbti, name: '진영', today: TODAY, nextBirthday: NEXT_BIRTHDAY, seedKey: stem + mbti }),
+      letter: composeFirstLetter({ dayMaster: stem, dayBranch: BRANCHES[(STEMS.indexOf(stem) * 5 + mbti.length) % 12]!, mbti, name: '진영', today: TODAY, nextBirthday: NEXT_BIRTHDAY, seedKey: stem + mbti }),
     })),
   );
   return (

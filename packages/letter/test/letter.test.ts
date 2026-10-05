@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { STEMS, THEME_AXES, type Stem, type TenGodGroup } from '@naite/saju';
+import { BRANCHES, STEMS, TEN_GOD_GROUP, THEME_AXES, type Stem, type TenGod } from '@naite/saju';
 import {
-  addMonths, birthdayInYear, birthdayKeyOf, composeFirstLetter, createFirstLetter, koreanInternationalAge,
+  addMonths, birthdayInYear, chooseAnchor, isClash, isCombine, birthdayKeyOf, composeFirstLetter, createFirstLetter, koreanInternationalAge,
   nextLetterBirthday, templates, todayInKorea, vocative, type FirstLetterRequest,
 } from '../src/index.ts';
 
@@ -79,17 +79,17 @@ describe('첫해 첫 장 — CLAUDE.md 5-2 매핑 케이스', () => {
     expect(letter.meta.seun.stemTenGod).toBe('편관');
     expect(letter.meta.combination).toBe('둘 다 버거움');
   });
-  it('인사 → 상황 → 비유 → MBTI → 끊기', () => {
+  it('인사 → 본문(관성 PF 세 버전 중 하나) → 시점을 짚는 끊기', () => {
     expect(letter.greeting).toBe('진영아, 생일 축하해. 다음 생일의 나야.');
-    const [situation, metaphor, mbti, cut] = letter.paragraphs;
-    expect(templates.LEADS.some((l) => situation!.startsWith(l))).toBe(true);
-    // 午는 같은 관성이라 보조 문장 없음: 첫마디 + 상황 한 덩어리로 끝난다
-    expect(templates.SITUATIONS.편관.some((t) => templates.LEADS.some((l) => situation === `${l} ${t}`))).toBe(true);
-    expect(metaphor).toContain('쇠를 불에 달궈 두드리던 시간');
-    expect(metaphor).toContain(templates.METAPHORS.庚.관성.unpack);
-    // 관성 축은 J/P → T/F 순. INFP 는 P·F 로 둘 다 버거움
-    expect(templates.MBTI_PARAGRAPHS.관성.PF).toContain(mbti);
-    expect(cut).toBe('그리고 이건 꼭 직접 말해주고 싶었어. 이번 1년 동안 네가 한 일 중에 내가 제일 고마운 건');
+    expect(letter.meta.bodyKey).toBe('PF');
+    const cut = letter.paragraphs.at(-1)!;
+    expect(cut).toBe(letter.cut);
+    expect(letter.cut).toContain(letter.moment.when);
+    expect(/(너는|네가)$/.test(letter.cut)).toBe(true);
+  });
+  it('시점: 일지 寅과 충하는 申월은 기간 밖, 합하는 亥월(11월)이 기간 안 → "마음이 좀 놓였던 11월"류', () => {
+    expect(letter.moment.anchor).toEqual({ kind: 'combine', month: 11 });
+    expect(letter.moment.label).toMatch(/11월$/);
   });
   it('같은 사람이면 몇 번을 열어도 같은 편지', () => {
     const again = createFirstLetter(BASE, NOW);
@@ -101,73 +101,130 @@ describe('첫해 첫 장 — CLAUDE.md 5-2 매핑 케이스', () => {
   });
 });
 
-describe('전 조합 점검: 일간 10 × 세운 60갑자 × MBTI 16', () => {
-  const MBTIS = ['E', 'I'].flatMap((a) => ['N', 'S'].flatMap((b) => ['T', 'F'].flatMap((c) => ['J', 'P'].map((e) => a + b + c + e))));
-  // 2026~2085년 생일 기준으로 60갑자 세운을 모두 지난다 (기간 = 10월 1일 → 이듬해 2월 23일, 대부분 앞 해)
-  const BANNED = ['투자', '이직', '퇴사', '연애', '결혼', '이별', '건강', '병원', '수술', '죽', '사고', '반드시', '무조건'];
-  const JARGON = ['비견', '겁재', '식신', '상관', '편재', '정재', '편관', '정관', '편인', '정인', '비겁', '식상', '재성', '관성', '인성', '일간', '세운', '사주', '오행', '십신'];
+const MBTIS = ['E', 'I'].flatMap((a) => ['N', 'S'].flatMap((b) => ['T', 'F'].flatMap((c) => ['J', 'P'].map((e) => a + b + c + e))));
+const BANNED = ['투자', '이직', '퇴사', '연애', '결혼', '이별', '건강', '병원', '수술', '죽', '반드시', '무조건'];
+const JARGON = ['비견', '겁재', '식신', '상관', '편재', '정재', '편관', '정관', '편인', '정인', '비겁', '식상', '재성', '관성', '인성', '일간', '세운', '오행', '십신', '월운'];
+/** 사람 글처럼 보이지 않게 만드는 상투어 (리뷰에서 지적된 AI 문체) */
+const AI_TELLS = ['너라서', '많이 애썼', '단단해졌', '나는 기억해', '다 기억해', '그 시간을 지나와서', '잘 맞는 해였', '마음 한쪽', '숨 돌릴 틈', '차곡차곡', '한 걸음씩', '오롯이', '선물 같', '쉼표'];
 
-  it('모든 조합에서 문장이 완성되고, 금지어·명리 용어가 없다', () => {
+/** 2026~2085년, 시작 달·기간을 바꿔 가며 편지를 만든다 */
+function* letters() {
+  let i = 0;
+  for (let y = 2026; y < 2086; y++) {
+    for (const stem of STEMS) {
+      for (const mbti of MBTIS) {
+        i++;
+        const today = d(y, 1 + (i % 12), 1 + (i % 27));
+        const months = 4 + (i % 11); // 4~14개월
+        const total = today.month - 1 + months;
+        const next = d(y + Math.floor(total / 12), (total % 12) + 1, 1 + ((i * 7) % 27));
+        yield { y, stem: stem as Stem, mbti, l: composeFirstLetter({ dayMaster: stem as Stem, dayBranch: BRANCHES[i % 12]!, mbti, name: null, today, nextBirthday: next, seedKey: `${y}${stem}${mbti}${i}` }) };
+      }
+    }
+  }
+}
+
+describe('전 조합 점검: 일간 10 × 60년 × MBTI 16 (9,600통)', () => {
+  it('문장이 완성되고, 금지어·명리 용어·AI 상투어·짐작 말투가 없다', () => {
     const seen = new Set<string>();
-    for (let y = 2026; y < 2086; y++) {
-      for (const stem of STEMS) {
-        for (const mbti of MBTIS) {
-          const l = composeFirstLetter({
-            dayMaster: stem as Stem, mbti, name: null, today: d(y, 10, 1), nextBirthday: d(y + 1, 2, 23), seedKey: `${y}${stem}${mbti}`,
-          });
-          seen.add(l.meta.seunPillar);
-          const text = [l.greeting, ...l.paragraphs].join('\n');
-          for (const w of [...BANNED, ...JARGON, '{m}', 'undefined', '  ']) {
-            if (text.includes(w)) throw new Error(`"${w}" in ${y} ${stem} ${mbti}: ${text}`);
-          }
-          for (const p of l.paragraphs.slice(0, -1)) if (!/[.]$/.test(p)) throw new Error(p);
-          // 편지 전체에서 눈에 띄는 말이 반복되지 않는다
-          for (const w of ['시간이었', '빨리', '빠르']) {
-            if ((text.split(w).length - 1) > 1) throw new Error(`"${w}" repeated: ${text}`);
-          }
-          // 비유 문단 안에서 같은 말이 두 번 나오지 않는다
-          for (const w of ['보니', '한마디', '더라.', '시간이었']) {
-            if ((l.paragraphs[1]!.split(w).length - 1) > 1) throw new Error(`"${w}" twice: ${l.paragraphs[1]}`);
-          }
+    for (const { y, stem, mbti, l } of letters()) {
+      seen.add(l.meta.seunPillar);
+      const text = [l.greeting, ...l.paragraphs].join('\n');
+      for (const w of [...BANNED, ...JARGON, ...AI_TELLS, '{', '}', 'undefined', '  ']) {
+        if (text.includes(w)) throw new Error(`"${w}" in ${y} ${stem} ${mbti}: ${text}`);
+      }
+      if (/을 거[야예]/.test(text)) throw new Error(`짐작 말투: ${text}`);
+      if ((text.match(/사주/g) ?? []).length > 1) throw new Error(`"사주" 두 번: ${text}`);
+      for (const p of l.paragraphs.slice(0, -1)) {
+        if (!/[.?!]$/.test(p)) throw new Error(`문단이 문장으로 안 끝남: ${p}`);
+        // 명사형·관형형으로 끝나는 감성 조각 문장 금지 ("헷갈리는." 같은)
+        for (const sentence of p.split(/(?<=[.?!])\s+/)) {
+          if (/[는던은]\.$/.test(sentence)) throw new Error(`조각 문장: ${sentence}`);
         }
       }
     }
     expect(seen.size).toBe(60);
   });
 
-  it('MBTI 문단이 테마마다 네 가지 조합을 모두 갖추고, 조합 규칙을 지킨다', () => {
-    for (const [theme, rules] of Object.entries(THEME_AXES) as [TenGodGroup, (typeof THEME_AXES)[TenGodGroup]][]) {
-      const keys = rules[0].axis && [rules[0].easy, rules[0].hard].flatMap((a) => [rules[1].easy, rules[1].hard].map((b) => a + b));
-      expect(Object.keys(templates.MBTI_PARAGRAPHS[theme]).sort()).toEqual([...keys].sort());
+  it('나란히 놓아도 같은 문장이 반복되지 않는다: 10글자 구절이 편지 15% 넘게 나오지 않음 (끊기 8종이 각각 약 12.5%)', () => {
+    const df = new Map<string, number>();
+    let n = 0;
+    for (const { l } of letters()) {
+      n++;
+      // 인사는 서비스 고정 문구라 제외
+      const text = l.paragraphs.join(' ').replace(/\s+/g, ' ');
+      const grams = new Set<string>();
+      for (let i = 0; i + 10 <= text.length; i++) grams.add(text.slice(i, i + 10));
+      for (const g of grams) df.set(g, (df.get(g) ?? 0) + 1);
+    }
+    const top = [...df.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([g, c]) => `${g} ${(c / n * 100).toFixed(1)}%`);
+    expect((top[0] ? Number(top[0].split(' ').at(-1)!.replace('%', '')) : 0), top.join(' | ')).toBeLessThan(15);
+  });
+
+  it('본문 120통: 십신마다 조합 4개 × 버전 3, 버전마다 뼈대가 다르다', () => {
+    let count = 0;
+    for (const [god, bodies] of Object.entries(templates.BODIES)) {
+      const theme = TEN_GOD_GROUP[god as TenGod];
+      const [a, b] = THEME_AXES[theme];
+      const keys = [a.easy, a.hard].flatMap((x) => [b.easy, b.hard].map((y) => x + y));
+      expect(Object.keys(bodies).sort(), god).toEqual([...keys].sort());
       for (const key of keys) {
-        const hard = [key[0] === rules[0].hard, key[1] === rules[1].hard].filter(Boolean).length;
-        for (const p of templates.MBTI_PARAGRAPHS[theme][key]!) {
-          // 둘 다 버거움: 마지막 두 문장 안에 "그래도"
-          if (hard === 2) expect(p.split('. ').slice(-2).join('. '), p).toContain('그래도');
-          if (hard === 1) expect(p, p).toMatch(/그래도.*너라서 잘 해/);
-          if (hard === 0) expect(p, p).toMatch(/잘 맞는 해/);
+        const [v0, v1, v2] = bodies[key]!;
+        count += 3;
+        expect(v0, `${god} ${key} v0`).toContain('{m}'); // 상황부터 + 비유
+        expect(v1, `${god} ${key} v1`).toContain('{season}'); // 감정부터 + 계절
+        expect(v2!.startsWith('{season}'), `${god} ${key} v2`).toBe(true); // 계절부터
+        for (const v of [v0, v1, v2]) {
+          expect(v, `${god} ${key}`).toContain('{sub}');
+          expect(v!.replace(/\{(m|season|sub)\}/g, ''), `${god} ${key}`).not.toMatch(/[{}]/);
+          // 조합 규칙: 둘 다 편함 → 방심한 순간 하나 / 그 외 → 돌아서는 말
+          const hard = [key[0] === a.hard, key[1] === b.hard].filter(Boolean).length;
+          if (hard === 0) expect(v, `${god} ${key}`).toMatch(/딱 하나|다만|하나 아쉬운|하나 꼽자면|아, 근데/);
+          else expect(v, `${god} ${key}`).toMatch(/그래도|근데|그런데|지만|그래서/);
         }
       }
     }
-  });
-
-  it('기억하는 말투: 남의 일을 짐작하는 "~을 거야"를 쓰지 않는다', () => {
-    const all = [
-      ...templates.LEADS,
-      ...templates.METAPHOR_FRAMES,
-      ...Object.values(templates.METAPHORS).flatMap((g) => Object.values(g).flatMap((x) => [x.m, x.unpack])),
-      ...Object.values(templates.SITUATIONS).flat(),
-      ...Object.values(templates.SUB_SENTENCES).flat(),
-      ...Object.values(templates.MBTI_PARAGRAPHS).flatMap((g) => Object.values(g).flat()),
-    ];
-    for (const t of all) expect(t, t).not.toMatch(/을 거[야예]/);
+    expect(count).toBe(120);
   });
 
   it('비유 50종이 모두 서로 다르다', () => {
-    const all = Object.values(templates.METAPHORS).flatMap((g) => Object.values(g).map((x) => x.m));
+    const all = Object.values(templates.METAPHORS).flatMap((g) => Object.values(g));
     expect(all).toHaveLength(50);
-    for (const m of all) expect(m.endsWith(' 시간'), m).toBe(true);
     expect(new Set(all).size).toBe(50);
+  });
+
+  it('계절 디테일은 기간 안의 달에서, 시점과 다른 달로 고른다', () => {
+    for (const { l } of letters()) {
+      const m = l.meta.seasonMonth;
+      if (m === null) continue;
+      const a = l.moment.anchor;
+      if (a.kind !== 'none') expect(m).not.toBe(a.month);
+    }
+  });
+});
+
+describe('시점 고르기 (일지와 월지의 충·합)', () => {
+  it('충·합 판정', () => {
+    expect(isClash('子', '午')).toBe(true);
+    expect(isClash('寅', '申')).toBe(true);
+    expect(isClash('寅', '亥')).toBe(false);
+    expect(['子丑', '寅亥', '卯戌', '辰酉', '巳申', '午未'].every((p) => isCombine(p[0] as never, p[1] as never))).toBe(true);
+    expect(isCombine('子', '寅')).toBe(false);
+  });
+  it('충하는 달이 기간 안에 있으면 그 달이 먼저 (일지 午 → 子월 = 12월)', () => {
+    expect(chooseAnchor('午', d(2026, 10, 5), d(2027, 8, 30))).toEqual({ kind: 'clash', month: 12 });
+  });
+  it('충 없고 합만 있으면 합하는 달 (일지 寅, 10월~2월 → 亥월 = 11월)', () => {
+    expect(chooseAnchor('寅', d(2026, 10, 3), d(2027, 2, 23))).toEqual({ kind: 'combine', month: 11 });
+  });
+  it('둘 다 없고 입춘이 끼어 있으면 입춘 무렵, 그것도 없으면 시점 없음', () => {
+    // 일지 午: 충 子(12월)·합 未(7월). 2027-01-10 ~ 2027-05-01 은 둘 다 없고 입춘이 있음
+    expect(chooseAnchor('午', d(2027, 1, 10), d(2027, 5, 1))).toEqual({ kind: 'ipchun', month: 2 });
+    expect(chooseAnchor('午', d(2027, 2, 20), d(2027, 6, 1))).toEqual({ kind: 'none' });
+  });
+  it('같은 기간이라도 일지가 다르면 다른 시점이 나온다', () => {
+    const anchors = new Set(BRANCHES.map((b) => JSON.stringify(chooseAnchor(b, d(2026, 10, 5), d(2027, 8, 30)))));
+    expect(anchors.size).toBeGreaterThanOrEqual(10);
   });
 });
 

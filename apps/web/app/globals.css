@@ -469,6 +469,38 @@ a {
   line-height: 1.6;
 }
 
+/* ── 소인 (일주·생일) ─────────────── */
+.stamp {
+  float: right;
+  width: 64px;
+  height: 64px;
+  margin: -14px -8px 8px 12px;
+  border-radius: 50%;
+  border: 2px solid var(--pink-strong);
+  outline: 1px solid var(--pink-strong);
+  outline-offset: 3px;
+  color: #b4708a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-8deg);
+  opacity: 0.85;
+}
+
+.stamp-pillar {
+  font-family: var(--font-letter), serif;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.stamp-date {
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── 봉투 ─────────────────────────── */
 .envelope-wrap {
   margin-top: 40px;
@@ -561,6 +593,38 @@ a {
   font-size: 14px;
   color: var(--sub);
   line-height: 1.6;
+}
+
+.envelope-list {
+  text-align: left;
+  margin: 0 auto 16px;
+  padding: 14px 18px 14px 34px;
+  max-width: 320px;
+  background: var(--pink);
+  border-radius: 14px;
+  display: grid;
+  gap: 6px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.peek {
+  text-align: left;
+  margin: 0 auto 20px;
+  max-width: 320px;
+  padding: 14px 16px;
+  background: var(--paper);
+  border-radius: 6px;
+  font-family: var(--font-letter), serif;
+  font-size: 15.5px;
+  line-height: 1.9;
+  color: var(--ink-strong);
+}
+
+.peek .blur {
+  color: transparent;
+  text-shadow: 0 0 7px rgba(74, 51, 85, 0.55);
+  user-select: none;
 }
 
 .refund-note {

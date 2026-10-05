@@ -1,5 +1,5 @@
 // 입력 폼 → 첫해 첫 장. 웹(서버)에서 이 함수 하나만 부른다. 아무것도 저장하지 않는다.
-import { calculateSaju, SajuInputError, type CivilDate } from '@naite/saju';
+import { calculateSaju, pillarKorean, pillarText, SajuInputError, type CivilDate } from '@naite/saju';
 import { composeFirstLetter, normalizeName, type FirstLetter } from './compose.ts';
 import { birthdayKeyOf, koreanInternationalAge, nextLetterBirthday, todayInKorea, type BirthdayBasis } from './cycle.ts';
 
@@ -22,10 +22,17 @@ export interface FirstLetterRequest {
   confirmAge: boolean;
 }
 
+/** 편지에 찍는 소인: 일주와 출생일 ("이 사람에게 맞춰 썼다"는 표시) */
+export interface LetterStamp {
+  dayPillar: string;
+  dayPillarKo: string;
+  birthDate: string;
+}
+
 export type FirstLetterField = 'birth' | 'time' | 'birthplace' | 'mbti' | 'name' | 'birthdayBasis' | 'confirm';
 
 export type FirstLetterResponse =
-  | { ok: true; letter: FirstLetter; nextBirthday: CivilDate; notes: string[] }
+  | { ok: true; letter: FirstLetter; nextBirthday: CivilDate; notes: string[]; stamp: LetterStamp }
   | { ok: false; field: FirstLetterField; message: string };
 
 const fail = (field: FirstLetterField, message: string): FirstLetterResponse => ({ ok: false, field, message });
@@ -67,10 +74,12 @@ export function createFirstLetter(req: FirstLetterRequest, now: Date = new Date(
 
   const nextBirthday = nextLetterBirthday(birthdayKeyOf(solarBirth, req.birthdayBasis), today);
   // 시간을 모르고 절입일이라 연·월주가 미정이어도 일간은 같다. 첫 장은 일간과 세운만 쓴다.
-  const dayMaster = saju.status === 'ok' ? saju.chart.dayMaster : saju.candidates.before.dayMaster;
+  const chart = saju.status === 'ok' ? saju.chart : saju.candidates.before;
+  const dayMaster = chart.dayMaster;
 
   const letter = composeFirstLetter({
     dayMaster,
+    dayBranch: chart.pillars.day.branch,
     mbti: req.mbti,
     name,
     today,
@@ -79,5 +88,10 @@ export function createFirstLetter(req: FirstLetterRequest, now: Date = new Date(
   });
 
   const notes = saju.notices.filter((n) => n.code === 'LATE_NIGHT_ZI').map(() => '밤 11시~자정에 태어난 경우, 기준에 따라 해석이 다를 수 있어요.');
-  return { ok: true, letter, nextBirthday, notes };
+  const stamp: LetterStamp = {
+    dayPillar: pillarText(chart.pillars.day),
+    dayPillarKo: pillarKorean(chart.pillars.day),
+    birthDate: saju.time.solarDate,
+  };
+  return { ok: true, letter, nextBirthday, notes, stamp };
 }
