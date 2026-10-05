@@ -82,7 +82,14 @@ export function WriteForm({ places, maxYear }: { places: PlaceOption[]; maxYear:
         confirmSelf,
         confirmAge,
       };
-      const res = await requestFirstLetter(request);
+      let res: Awaited<ReturnType<typeof requestFirstLetter>>;
+      try {
+        res = await requestFirstLetter(request);
+      } catch {
+        // 화면을 연 사이에 새 버전이 배포되면 서버 액션 주소가 바뀌어 실패한다. 오류 화면 대신 안내한다
+        setError({ field: 'confirm', message: '사이트가 방금 새로 바뀌었어요. 새로고침한 뒤 다시 눌러 주세요.' });
+        return;
+      }
       if (!res.ok) {
         setError({ field: res.field, message: res.message });
         return;
