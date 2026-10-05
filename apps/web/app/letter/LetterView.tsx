@@ -16,6 +16,21 @@ const COLOR_SWATCH: Record<string, string> = {
   베이지: '#E3D3B8', 흰색: '#FFFFFF', 은색: '#C9CED6', 남색: '#2F3E73', 검정: '#2B2B2B',
 };
 
+/** 문장 속 색 이름 앞에 작은 색 점을 찍는다 (편지 문장은 그대로 두고 눈에만 띄게) */
+function withColorDots(text: string, colors: readonly string[]): React.ReactNode[] {
+  const re = new RegExp(`(${colors.map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
+  return text.split(re).map((part, i) =>
+    colors.includes(part) ? (
+      <span key={i} className="color-word">
+        <span className="color-dot" style={{ background: COLOR_SWATCH[part] ?? '#ccc' }} aria-hidden="true" />
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
 export function LetterView({ secondPageFree: initialFree = false }: { secondPageFree?: boolean }) {
   const [secondPageFree, setSecondPageFree] = useState(initialFree);
   const [letter, setLetter] = useState<StoredLetter | null | undefined>(undefined);
@@ -30,8 +45,8 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
   useEffect(() => {
     setLetter(loadLetter());
     const saved = loadSecondPage();
-    // 예전 형식(맨 위 한 줄·색 카드가 없는)으로 저장된 두 번째 장은 다시 열게 한다
-    setSecond(saved && typeof saved.headline === 'string' && saved.keep ? saved : null);
+    // 예전 형식으로 저장된 두 번째 장은 다시 열게 한다
+    setSecond(saved && typeof saved.headline === 'string' && Array.isArray(saved.until) ? saved : null);
     // 서버가 그린 값이 꺼짐이어도 한 번 더 확인한다 (카카오톡 등에서 오래된 화면이 남아 있는 경우)
     secondPageAvailable()
       .then((on) => on && setSecondPageFree(true))
@@ -153,6 +168,9 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
             {second.moment.map((p, i) => (
               <p key={`m${i}`}>{i === 0 ? `…${p}` : p}</p>
             ))}
+            {second.until.map((p, i) => (
+              <p key={`u${i}`}>{withColorDots(p, second.colors)}</p>
+            ))}
             {second.flow.map((p, i) => (
               <p key={`f${i}`}>{p}</p>
             ))}
@@ -160,26 +178,6 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
             <span className="page-mark">2 / 2</span>
           </article>
 
-          <section className="keep-card" aria-label="다음 생일까지">
-            <h2 className="keep-title">다음 생일까지</h2>
-            <div className="keep-row">
-              <span className="keep-label">곁에 두면 좋은 색</span>
-              <p className="keep-colors">
-                {second.keep.colors.map((c) => (
-                  <span key={c} className="color-chip">
-                    <span className="color-dot" style={{ background: COLOR_SWATCH[c] ?? '#ccc' }} aria-hidden="true" />
-                    {c}
-                  </span>
-                ))}
-              </p>
-              <p className="keep-why">{second.keep.why}이래.</p>
-              <p className="keep-text">{second.keep.note}</p>
-            </div>
-            <div className="keep-row">
-              <span className="keep-label">마음가짐</span>
-              <p className="keep-text">{second.mindset}</p>
-            </div>
-          </section>
 
           {secondPageFree && (
             <section className="survey" aria-label="짧은 질문">
@@ -214,11 +212,11 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
           <p className="envelope-text">봉투 안에 한 장이 더 있어</p>
           <ol className="envelope-list">
             <li>{momentLabel}, 그날 네가 한 일</li>
+            <li>다음 생일까지 곁에 두면 좋은 색과 마음가짐</li>
             <li>
               {b.month}월 {b.day}일 생일부터 1년, 달라지는 흐름
             </li>
             <li>미래의 내가 꼭 부탁하고 싶은 한 가지</li>
-            <li>다음 생일까지 곁에 두면 좋은 색과 마음가짐</li>
           </ol>
           <p className="peek" aria-hidden="true">
             {/* 흐린 부분은 실제 두 번째 장 내용이 아니라 자리만 보여 주는 안내 문장이다 (내용을 지어내 보여 주지 않는다) */}

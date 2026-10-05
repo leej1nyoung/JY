@@ -774,65 +774,17 @@ a {
   color: var(--ink-strong);
 }
 
-/* ── 다음 생일까지 (색·마음가짐 카드) ── */
-.keep-card {
-  margin: 18px 0 0;
-  padding: 20px 20px 6px;
-  border-radius: 16px;
-  background: #efe7fa;
+/* 편지 문장 속 색 이름 */
+.color-word {
+  white-space: nowrap;
 }
 
-.keep-title {
-  font-family: var(--font-letter), serif;
-  font-size: 17px;
-  margin: 0 0 14px;
-  color: var(--ink-strong);
-}
-
-.keep-row {
-  margin-bottom: 16px;
-}
-
-.keep-label {
-  display: block;
-  font-size: 12.5px;
-  color: var(--sub);
-  margin-bottom: 6px;
-}
-
-.keep-colors {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 6px;
-}
-
-.color-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: #fff;
-  font-size: 14px;
-  color: var(--ink-strong);
-}
-
-.color-dot {
-  width: 14px;
-  height: 14px;
+.color-word .color-dot {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin: 0 3px 0 1px;
   border-radius: 50%;
-  border: 1px solid rgba(62, 42, 71, 0.18);
-}
-
-.keep-why,
-.keep-text {
-  margin: 0 0 4px;
-  font-size: 14.5px;
-  line-height: 1.6;
-  color: var(--ink);
-}
-
-.keep-why {
-  font-size: 13px;
-  color: var(--sub);
+  border: 1px solid rgba(62, 42, 71, 0.2);
+  vertical-align: 0.02em;
 }

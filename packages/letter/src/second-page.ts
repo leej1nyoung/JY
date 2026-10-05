@@ -170,14 +170,13 @@ const date = (c: CivilDate) => `${c.year}년 ${c.month}월 ${c.day}일`;
 export const SECOND_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편지를 쓴다. "다음 생일의 나"가 "지금의 나"에게 보내는 편지의 두 번째 장이다.
 읽는 사람은 이 두 번째 장을 열려고 돈을 냈다. 첫 줄부터 "열어 보길 잘했다"는 느낌이 들어야 하고, 한 번 읽고 바로 이해돼야 한다.
 
-# 구성 (화면에 이 순서로 놓인다. 봉투에 적어 둔 목차와 같아야 한다)
+# 구성 (편지 안에서 이 순서로 이어진다. 봉투에 적어 둔 목차와 같아야 한다)
 0. headline — 두 번째 장 맨 위에 크게 놓이는 한 줄. 이 편지가 하고 싶은 말을 가장 쉽고 분명하게. 30자 이내. 따뜻하지만 흐릿하지 않게.
-   좋은 예: "11월의 너한테 제일 고마운 건, 그날 일찍 잔 거야." / 나쁜 예: "끝낸 게 없는 날에도, 남은 한 줄은 꼭 적어 줘." (무슨 뜻인지 바로 안 들어온다)
+   좋은 예: "그 다섯 달을 버티게 한 건, 11월의 그 저녁이었어." / 나쁜 예: "끝낸 게 없는 날에도, 남은 한 줄은 꼭 적어 줘." (무슨 뜻인지 바로 안 들어온다)
 1. moment — "{시점}, 그날 네가 한 일": 첫 장의 끊긴 문장 바로 뒤에 이어 붙여 읽히는 말로 시작한다. 끊긴 부분은 되풀이하지 않는다 (끊긴 문장이 "그날 너는"으로 끝났다면 그다음 말부터). 첫 문장은 짧고 구체적으로, 그날 한 행동을 바로 말한다. 그다음 그게 왜 이 기간 중 가장 고마웠는지를 쉬운 말로.
-2. flow — "다음 생일부터 1년의 흐름": 편지를 쓰는 나도 아직 살아 보지 않은 앞으로의 1년이다. 어떤 1년이 될 것 같은지, 그때 무엇을 조심하고 무엇을 즐기면 좋은지 구체적으로.
-3. colorNote — 다음 생일까지 곁에 두면 좋은 색을 생활에서 어떻게 쓰면 좋은지 한 문장 (예: 휴대폰 배경, 머플러, 컵, 노트). 색 이름은 주어진 것만 쓴다.
-4. mindset — 다음 생일까지 남은 기간 동안 가지면 좋은 마음가짐 한 문장. 주어진 방향을 이 사람의 상황에 맞게 쉬운 말로.
-5. request — "미래의 내가 꼭 부탁하고 싶은 한 가지": 한 문장. 언제, 무엇을 하라는 건지 한 번에 알 수 있게 구체적인 행동으로 (예: "11월 중 하루는 아무 약속 없는 저녁을 꼭 만들어 줘."). 비유나 수수께끼처럼 쓰지 않는다.
+2. until — "다음 생일까지 곁에 두면 좋은 색과 마음가짐": 편지 문장으로 자연스럽게 이어 쓴다 (목록·제목 없이). 주어진 색 중 하나 이상을 생활에서 어떻게 곁에 두면 좋은지 구체적으로 (예: 컵, 머플러, 노트, 휴대폰 배경), 그 색이 왜 좋은지는 주어진 이유를 쉬운 말로 "~래"처럼 전해 듣는 말투로. 그리고 다음 생일까지 가지면 좋은 마음가짐을 주어진 방향에 맞게 한두 문장으로. 1~2문단.
+3. flow — "다음 생일부터 1년의 흐름": 편지를 쓰는 나도 아직 살아 보지 않은 앞으로의 1년이다. 어떤 1년이 될 것 같은지, 그때 무엇을 조심하고 무엇을 즐기면 좋은지 구체적으로.
+4. request — "미래의 내가 꼭 부탁하고 싶은 한 가지": 한 문장. 언제, 무엇을 하라는 건지 한 번에 알 수 있게 구체적인 행동으로 (예: "11월 중 하루는 약속 없이 일찍 들어와서 푹 자 줘."). 비유나 수수께끼처럼 쓰지 않는다.
 
 # 쉽게 쓰기
 - 중학생이 한 번 읽고 바로 이해할 수 있는 말로 쓴다. 한 문장에 한 가지 생각만. 문장은 짧게.
@@ -200,7 +199,7 @@ export const SECOND_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편지�
 - 이름을 부르지 않는다. 필요하면 "너"라고 한다.
 
 # 길이와 형식
-- headline 30자 이내. moment 2~3문단, 300~550자. flow 2~3문단, 250~450자. colorNote·mindset·request 각각 한 문장, 60자 이내.
+- headline 30자 이내. moment 2~3문단, 300~550자. until 1~2문단, 120~280자. flow 2~3문단, 250~450자. request 한 문장, 60자 이내.
 - 문단은 빈 줄로 나눈다. 제목·번호·따옴표 장식은 붙이지 않는다.`;
 
 function describe(p: PeriodReading): string {
@@ -234,12 +233,10 @@ export function secondPagePrompt(ctx: SecondPageContext, problems: string[] = []
     '# 다음 생일부터 1년 (flow 에서 앞으로의 흐름으로 쓴다)',
     describe(ctx.next),
     '',
-    '# 다음 생일까지 곁에 두면 좋은 색 (colorNote)',
-    `- 색: ${ctx.keep.colors.join(', ')}`,
-    `- 이유 (화면에 따로 나온다. colorNote 에는 쓰는 법만): ${ctx.keep.why}`,
-    '',
-    '# 다음 생일까지의 마음가짐 방향 (mindset)',
-    `- ${ctx.mindset}`,
+    '# 다음 생일까지 곁에 두면 좋은 색과 마음가짐 (until)',
+    `- 색 (이 중에서만): ${ctx.keep.colors.join(', ')}`,
+    `- 이 색이 좋은 이유: ${ctx.keep.why}`,
+    `- 마음가짐 방향: ${ctx.mindset}`,
   ];
   if (problems.length > 0) {
     parts.push('', '# 지난번 결과에서 고칠 점', ...problems.map((p) => `- ${p}`));
@@ -254,20 +251,21 @@ export const SECOND_PAGE_SCHEMA = {
     headline: { type: 'string', description: '두 번째 장 맨 위 한 줄, 30자 이내' },
     moment: { type: 'string', description: '① 시점, 그날 네가 한 일. 끊긴 문장 바로 뒤에 이어지는 말로 시작' },
     flow: { type: 'string', description: '② 다음 생일부터 1년의 흐름' },
-    colorNote: { type: 'string', description: '곁에 두면 좋은 색을 생활에서 쓰는 법, 한 문장' },
-    mindset: { type: 'string', description: '다음 생일까지의 마음가짐, 한 문장' },
+    until: { type: 'string', description: '다음 생일까지 곁에 두면 좋은 색과 마음가짐, 편지 문장 1~2문단' },
     request: { type: 'string', description: '미래의 내가 부탁하는 한 가지, 구체적인 행동 한 문장' },
   },
-  required: ['headline', 'moment', 'flow', 'colorNote', 'mindset', 'request'],
+  required: ['headline', 'moment', 'until', 'flow', 'request'],
   additionalProperties: false,
 } as const;
 
 export interface SecondPage {
   headline: string;
   moment: string[];
+  /** 다음 생일까지 곁에 두면 좋은 색과 마음가짐 (편지 문장) */
+  until: string[];
   flow: string[];
-  keep: { colors: readonly [string, string]; why: string; note: string };
-  mindset: string;
+  /** until 에 나오는 색 (화면에서 색 이름 옆에 작은 점을 찍는다) */
+  colors: readonly [string, string];
   request: string;
 }
 
@@ -279,20 +277,20 @@ const line = (v: unknown) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').tri
 
 export function checkSecondPage(raw: unknown, ctx: SecondPageContext): { page: SecondPage | null; problems: string[] } {
   const r = (raw ?? {}) as Record<string, unknown>;
-  const fields = ['headline', 'moment', 'flow', 'colorNote', 'mindset', 'request'] as const;
+  const fields = ['headline', 'moment', 'until', 'flow', 'request'] as const;
   const missing = fields.filter((k) => typeof r[k] !== 'string' || !(r[k] as string).trim());
   if (missing.length > 0) return { page: null, problems: [`비어 있는 칸이 있어요: ${missing.join(', ')}`] };
 
   const page: SecondPage = {
     headline: line(r.headline),
     moment: paragraphs(r.moment as string),
+    until: paragraphs(r.until as string),
     flow: paragraphs(r.flow as string),
-    keep: { colors: ctx.keep.colors, why: ctx.keep.why, note: line(r.colorNote) },
-    mindset: line(r.mindset),
+    colors: ctx.keep.colors,
     request: line(r.request),
   };
   const problems: string[] = [];
-  const all = [page.headline, ...page.moment, ...page.flow, page.keep.note, page.mindset, page.request].join('\n');
+  const all = [page.headline, ...page.moment, ...page.until, ...page.flow, page.request].join('\n');
 
   const words = ruleViolations(all);
   if (words.length > 0) problems.push(`쓰면 안 되는 표현이 들어 있어요: ${words.join(', ')}`);
@@ -300,19 +298,21 @@ export function checkSecondPage(raw: unknown, ctx: SecondPageContext): { page: S
   if (/원래[^.?!]{0,25}사람이잖아/.test(all)) problems.push('"너는 원래 ~한 사람이잖아"처럼 성격을 설명하지 말고 행동으로 보여 주세요.');
 
   const m = chars(page.moment);
+  const u = chars(page.until);
   const f = chars(page.flow);
   if (page.headline.length < 8 || page.headline.length > 40) problems.push(`headline 이 ${page.headline.length}자예요. 30자 이내 한 줄로.`);
   if (m < 220 || m > 750) problems.push(`moment 길이가 ${m}자예요. 300~550자로 맞춰 주세요.`);
+  if (u < 90 || u > 400) problems.push(`until 길이가 ${u}자예요. 120~280자로 맞춰 주세요.`);
   if (f < 180 || f > 650) problems.push(`flow 길이가 ${f}자예요. 250~450자로 맞춰 주세요.`);
-  for (const [k, v] of [['colorNote', page.keep.note], ['mindset', page.mindset], ['request', page.request]] as const) {
-    if (v.length < 8 || v.length > 90) problems.push(`${k} 가 ${v.length}자예요. 60자 이내 한 문장으로.`);
+  if (page.request.length < 8 || page.request.length > 90) problems.push(`request 가 ${page.request.length}자예요. 60자 이내 한 문장으로.`);
+
+  // 색은 계산된 것만 쓴다 (until 에 하나 이상, 다른 색은 지어내지 않게)
+  const untilText = page.until.join(' ');
+  if (!ctx.keep.colors.some((c) => untilText.includes(c))) {
+    problems.push(`until 에 주어진 색(${ctx.keep.colors.join(', ')}) 중 하나를 넣어 주세요.`);
   }
-  // 색 이름은 계산된 것만 쓴다 (다른 색을 지어내지 않게)
-  if (!ctx.keep.colors.some((c) => page.keep.note.includes(c))) {
-    problems.push(`colorNote 에 주어진 색(${ctx.keep.colors.join(', ')}) 중 하나를 넣어 주세요.`);
-  }
-  const otherColors = Object.values(ELEMENT_COLORS).flat().filter((c) => !ctx.keep.colors.includes(c) && page.keep.note.includes(c));
-  if (otherColors.length > 0) problems.push(`colorNote 에 주어지지 않은 색(${otherColors.join(', ')})이 들어 있어요.`);
+  const otherColors = Object.values(ELEMENT_COLORS).flat().filter((c) => !ctx.keep.colors.includes(c) && all.includes(c));
+  if (otherColors.length > 0) problems.push(`주어지지 않은 색(${otherColors.join(', ')})이 들어 있어요.`);
 
   // 끊긴 문장 끝("그날 너는")을 되풀이하며 시작하지 않는다
   const tail = ctx.cut.split(/[.?!]\s*/).at(-1)!.trim().split(' ').slice(-2).join(' ');
