@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BRANCHES, STEMS, TEN_GOD_GROUP, THEME_AXES, type Stem, type TenGod } from '@naite/saju';
 import {
-  addMonths, birthdayInYear, chooseAnchor, isClash, isCombine, birthdayKeyOf, composeFirstLetter, createFirstLetter, koreanInternationalAge,
+  addMonths, birthdayInYear, chooseAnchor, isClash, isCombine, spanWord, birthdayKeyOf, composeFirstLetter, createFirstLetter, koreanInternationalAge,
   nextLetterBirthday, templates, todayInKorea, vocative, type FirstLetterRequest,
 } from '../src/index.ts';
 
@@ -91,6 +91,19 @@ describe('첫해 첫 장 — CLAUDE.md 5-2 매핑 케이스', () => {
     expect(letter.moment.anchor).toEqual({ kind: 'combine', month: 11 });
     expect(letter.moment.label).toMatch(/11월$/);
   });
+  it('첫마디: 편지를 여는 날짜·요일·시간대와 다음 생일까지의 길이를 짚는다', () => {
+    const hook = letter.paragraphs[0]!;
+    // 2026-10-03 12:00 KST = 토요일 오후, 다음 생일 2027-02-23 까지 약 다섯 달
+    expect(hook).toMatch(/10월 3일|토요일|오후/);
+    expect(templates.NOW_LINES[10]!.some((n) => hook.includes(n)) || templates.HOOKS.some((h) => !h.includes('{now}'))).toBe(true);
+    expect(hook).not.toContain('{');
+  });
+  it('기간이 열 달이 안 되면 "1년" 대신 실제 길이로 쓴다', () => {
+    expect(spanWord(d(2026, 10, 3), d(2027, 2, 23))).toBe('다섯 달');
+    expect(spanWord(d(2026, 10, 3), d(2027, 1, 5))).toBe('석 달');
+    expect(spanWord(d(2026, 10, 3), d(2027, 9, 1))).toBe('1년');
+    expect([...letter.paragraphs].join(' ')).not.toContain('1년');
+  });
   it('같은 사람이면 몇 번을 열어도 같은 편지', () => {
     const again = createFirstLetter(BASE, NOW);
     expect(again.ok && again.letter.paragraphs).toEqual(letter.paragraphs);
@@ -118,7 +131,7 @@ function* letters() {
         const months = 4 + (i % 11); // 4~14개월
         const total = today.month - 1 + months;
         const next = d(y + Math.floor(total / 12), (total % 12) + 1, 1 + ((i * 7) % 27));
-        yield { y, stem: stem as Stem, mbti, l: composeFirstLetter({ dayMaster: stem as Stem, dayBranch: BRANCHES[i % 12]!, mbti, name: null, today, nextBirthday: next, seedKey: `${y}${stem}${mbti}${i}` }) };
+        yield { y, stem: stem as Stem, mbti, l: composeFirstLetter({ dayMaster: stem as Stem, dayBranch: BRANCHES[i % 12]!, mbti, name: null, today, nextBirthday: next, seedKey: `${y}${stem}${mbti}${i}`, readAt: new Date(Date.UTC(today.year, today.month - 1, today.day, i % 24) - 9 * 3600_000) }) };
       }
     }
   }
@@ -199,6 +212,7 @@ describe('전 조합 점검: 일간 10 × 60년 × MBTI 16 (9,600통)', () => {
       if (m === null) continue;
       const a = l.moment.anchor;
       if (a.kind !== 'none') expect(m).not.toBe(a.month);
+      expect(m).not.toBe(l.meta.period.from.month); // 지금 달은 첫마디가 이미 말한다
     }
   });
 });

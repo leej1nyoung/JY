@@ -6,10 +6,10 @@ import {
 } from '@naite/saju';
 import { calendarMonthsIn, chooseAnchor, type Anchor } from './anchor.ts';
 import {
-  BODIES, CUTS, FLAVORS, METAPHOR_FRAMES, METAPHORS, SEASON, SUB_SENTENCES, WHEN_IPCHUN, WHEN_NONE,
+  BODIES, CUTS, FLAVORS, HOOKS, METAPHOR_FRAMES, METAPHORS, NOW_LINES, SEASON, SUB_SENTENCES, WHEN_IPCHUN, WHEN_NONE,
 } from './templates.ts';
 
-export const TEMPLATE_VERSION = '3.0.0';
+export const TEMPLATE_VERSION = '3.1.0';
 
 const AXIS_INDEX = { 'E/I': 0, 'N/S': 1, 'T/F': 2, 'J/P': 3 } as const;
 
@@ -26,6 +26,8 @@ export interface FirstLetterInput {
   nextBirthday: CivilDate;
   /** 조각 선택을 사용자별로 고정하기 위한 키 (출생 정보 등) */
   seedKey: string;
+  /** 편지를 여는 순간. 첫마디가 이 날짜·요일·시간대를 짚는다 (없으면 지금) */
+  readAt?: Date;
 }
 
 /** 편지가 짚은 시점. 봉투(두 번째 장 목차)와 4단계 AI 프롬프트가 같은 값을 쓴다 */
@@ -96,6 +98,31 @@ function momentOf(anchor: Anchor, seed: string): LetterMoment {
   return { anchor, when: pick(WHEN_NONE, seed, 'when'), label: '1년 중 어느 날' };
 }
 
+const WEEKDAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+const NATIVE_MONTHS: Record<number, string> = { 2: '두 달', 3: '석 달', 4: '넉 달', 5: '다섯 달', 6: '여섯 달', 7: '일곱 달', 8: '여덟 달', 9: '아홉 달' };
+
+function timeOfDay(hour: number): string {
+  if (hour < 5) return '새벽';
+  if (hour < 11) return '아침';
+  if (hour < 17) return '오후';
+  if (hour < 21) return '저녁';
+  return '밤';
+}
+
+/** 받침이 있으면 with, 없으면 without */
+function josa(word: string, withBatchim: string, without: string): string {
+  const code = word.charCodeAt(word.length - 1);
+  const has = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
+  return word + (has ? withBatchim : without);
+}
+
+/** 지금부터 다음 생일까지의 길이. 열 달 이상이면 "1년", 아니면 "넉 달"처럼 */
+export function spanWord(from: CivilDate, to: CivilDate): string {
+  const days = (Date.UTC(to.year, to.month - 1, to.day) - Date.UTC(from.year, from.month - 1, from.day)) / 86_400_000;
+  const months = Math.max(2, Math.round(days / 30.44));
+  return months >= 10 ? '1년' : NATIVE_MONTHS[months]!;
+}
+
 /** 빈 칸을 지운 뒤 생기는 이중 공백·문단 앞뒤 공백 정리 */
 function tidy(text: string): string[] {
   return text
@@ -116,6 +143,22 @@ export function composeFirstLetter(input: FirstLetterInput): FirstLetter {
   // 1. 인사
   const greeting = name ? `${vocative(name)}, 생일 축하해. 다음 생일의 나야.` : '생일 축하해. 다음 생일의 나야.';
 
+  // 1-1. 첫마디: 편지를 여는 지금(날짜·요일·시간대·계절)과 다음 생일까지의 길이
+  const readAt = input.readAt ?? new Date();
+  const kst = new Date(readAt.getTime() + 9 * 3600_000);
+  const readMonth = kst.getUTCMonth() + 1;
+  const span = spanWord(input.today, input.nextBirthday);
+  const time = timeOfDay(kst.getUTCHours());
+  const hook = pick(HOOKS, seed, 'hook')
+    .replace('{date}', `${readMonth}월 ${kst.getUTCDate()}일`)
+    .replace('{weekday}', WEEKDAYS[kst.getUTCDay()]!)
+    .replace('{time이지}', josa(time, '이지', '지'))
+    .replace('{time}', time)
+    .replace('{now}', pick(NOW_LINES[readMonth]!, seed, 'now'))
+    .replace('{span이나}', josa(span, '이나', '나'))
+    .replace('{span이}', josa(span, '이', '가'))
+    .replace('{span}', span);
+
   // 2. 시점: 일지와 충·합하는 월운의 달 (없으면 입춘 무렵, 그것도 없으면 시점 없이). 사람마다 다르다.
   const anchor = chooseAnchor(input.dayBranch, input.today, input.nextBirthday);
   const moment = momentOf(anchor, seed);
@@ -125,23 +168,25 @@ export function composeFirstLetter(input: FirstLetterInput): FirstLetter {
   const variants = BODIES[seun.stemTenGod][bodyKey]!;
   const variant = pickIndex(variants.length, seed, 'body');
 
-  // 계절 디테일: 기간 안의 달 중 시점과 다른 달
   const anchorMonth = anchor.kind === 'none' ? null : anchor.month;
-  const months = calendarMonthsIn(input.today, input.nextBirthday).filter((m) => m !== anchorMonth);
+  // 계절 디테일: 기간 안의 달 중 시점·지금 달과 다른 달
+  const months = calendarMonthsIn(input.today, input.nextBirthday).filter((m) => m !== anchorMonth && m !== readMonth);
   const seasonMonth = months.length > 0 ? pick(months, seed, 'season-month') : null;
   const season = seasonMonth === null ? '' : pick(SEASON[seasonMonth]!, seed, 'season');
 
   const body = variants[variant]!
     .replace('{m}', pick(METAPHOR_FRAMES, seed, 'frame').replace('{m}', METAPHORS[input.dayMaster][seun.theme]))
     .replace('{season}', season)
-    .replace('{sub}', seun.needsSubSentence ? pick(SUB_SENTENCES[seun.branchGroup], seed, 'sub') : '');
+    .replace('{sub}', seun.needsSubSentence ? pick(SUB_SENTENCES[seun.branchGroup], seed, 'sub') : '')
+    // 본문은 "1년"으로 써 두고, 실제 기간이 짧으면 "넉 달"처럼 바꾼다 (년·달 모두 받침이 있어 조사가 같다)
+    .replaceAll('1년', span);
 
   // 4. 끊기: 1년 중 가장 고마운 일 직전, 그 시점을 짚으며 멈춘다
-  const cut = pick(CUTS, seed, 'cut').replace('{when}', moment.when);
+  const cut = pick(CUTS, seed, 'cut').replace('{when}', moment.when).replaceAll('1년', span);
 
   return {
     greeting,
-    paragraphs: [...tidy(body), cut],
+    paragraphs: [hook, ...tidy(body), cut],
     cut,
     moment,
     meta: {

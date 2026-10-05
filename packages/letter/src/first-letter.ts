@@ -85,6 +85,7 @@ export function createFirstLetter(req: FirstLetterRequest, now: Date = new Date(
     today,
     nextBirthday,
     seedKey: [saju.time.solarDate, saju.time.clock ?? 'unknown', req.birthplaceCode, req.mbti].join('|'),
+    readAt: now,
   });
 
   const notes = saju.notices.filter((n) => n.code === 'LATE_NIGHT_ZI').map(() => '밤 11시~자정에 태어난 경우, 기준에 따라 해석이 다를 수 있어요.');
