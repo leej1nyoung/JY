@@ -3,11 +3,38 @@
 import 'server-only';
 import type { TrackedEvent } from './events';
 
+/** 설정 값이 잘못 들어갔을 때 던지는 오류. 메시지에 환경변수 값을 절대 넣지 않는다 */
+export class StoreConfigError extends Error {}
+
 function config() {
   // 프로젝트 URL 만 필요하다. 실수로 붙여 넣은 /rest/v1/ 이나 끝의 / 는 떼어 낸다.
   const url = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
-  const key = process.env.SUPABASE_SECRET_KEY;
+  const key = process.env.SUPABASE_SECRET_KEY?.trim();
   return url && key ? { url, key } : null;
+}
+
+/** 값을 드러내지 않고 설정이 맞는지만 확인한다 */
+function checked(c: { url: string; key: string }): { url: string; key: string } {
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(c.url)) {
+    throw new StoreConfigError(
+      c.url.startsWith('sb_') || c.url.startsWith('eyJ')
+        ? 'SUPABASE_URL 칸에 주소가 아니라 키가 들어 있어요. https://(프로젝트 ID).supabase.co 를 넣어 주세요.'
+        : 'SUPABASE_URL 형식이 달라요. https://(프로젝트 ID).supabase.co 형식이어야 해요.',
+    );
+  }
+  if (c.key.startsWith('https://')) {
+    throw new StoreConfigError('SUPABASE_SECRET_KEY 칸에 키가 아니라 주소가 들어 있어요.');
+  }
+  return c;
+}
+
+/** 네트워크 오류 메시지에는 요청 주소가 섞일 수 있어서 값 없이 다시 던진다 */
+async function request(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new StoreConfigError('Supabase에 연결하지 못했어요. SUPABASE_URL을 확인해 주세요.');
+  }
 }
 
 function headers(key: string): Record<string, string> {
@@ -42,9 +69,10 @@ export function isStoreConfigured(): boolean {
 }
 
 export async function saveEvent(e: TrackedEvent): Promise<void> {
-  const c = config();
-  if (!c) return;
-  const res = await fetch(`${c.url}/rest/v1/events`, {
+  const raw = config();
+  if (!raw) return;
+  const c = checked(raw);
+  const res = await request(`${c.url}/rest/v1/events`, {
     method: 'POST',
     headers: { ...headers(c.key), Prefer: 'return=minimal' },
     body: JSON.stringify({ visitor_id: e.visitorId, event: e.event, path: e.path }),
@@ -54,9 +82,10 @@ export async function saveEvent(e: TrackedEvent): Promise<void> {
 }
 
 export async function loadCounts(): Promise<{ event: string; visitors: number; total: number }[]> {
-  const c = config();
-  if (!c) throw new Error('not configured');
-  const res = await fetch(`${c.url}/rest/v1/event_funnel?select=event,visitors,total`, {
+  const raw = config();
+  if (!raw) throw new StoreConfigError('not configured');
+  const c = checked(raw);
+  const res = await request(`${c.url}/rest/v1/event_funnel?select=event,visitors,total`, {
     headers: headers(c.key),
     cache: 'no-store',
   });
