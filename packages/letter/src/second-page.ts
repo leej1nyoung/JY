@@ -80,6 +80,8 @@ const THEME_MINDSET: Readonly<Record<TenGodGroup, string>> = {
 export interface PeriodReading {
   from: CivilDate;
   to: CivilDate;
+  /** 주 테마 (십신 그룹) */
+  theme: TenGodGroup;
   /** 정/편 톤 */
   tone: string;
   situation: string;
@@ -114,6 +116,7 @@ export function reading(dayMaster: Stem, mbti: string, from: CivilDate, to: Civi
   return {
     from,
     to,
+    theme: seun.theme,
     tone: seun.tone,
     situation: THEME_SITUATION[seun.theme],
     aside: seun.needsSubSentence ? THEME_SITUATION[seun.branchGroup] : null,

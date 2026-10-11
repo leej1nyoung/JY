@@ -8,3 +8,4 @@ export * from './second-page.ts';
 export * from './checkin.ts';
 export * from './first-page-ai.ts';
 export * from './eval.ts';
+export * from './scenes.ts';

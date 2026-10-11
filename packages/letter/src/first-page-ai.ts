@@ -7,6 +7,7 @@ import {
   calculateSaju, compareWithMbti, ipchunUtc, koreaCivilToUtc, parseMbti, sajuAxisScores,
   type Branch, type CivilDate, type Stem,
 } from '@naite/saju';
+import { pickBySeed, SCENES, THEME_ACTIONS } from './scenes.ts';
 import { spanWord, vocative } from './compose.ts';
 import { createFirstLetter, type FirstLetterField, type FirstLetterRequest, type LetterStamp } from './first-letter.ts';
 import { describe, keyMonths, followingBirthday, reading, type KeyMonths, type PeriodReading } from './second-page.ts';
@@ -45,6 +46,10 @@ export interface FirstPageContext {
   months: KeyMonths;
   /** 기간 안에 입춘(세운이 바뀌는 때)이 있으면 true */
   ipchunInPeriod: boolean;
+  /** 이 사람 편지에 쓸 생활 장면 (사람마다 다르게 고른다) */
+  scenes: string[];
+  /** 내가 그 시기에 해 보고 효과 있었던 행동 후보 (주 테마별) */
+  actions: string[];
   /** 봉투에 보일 두 번째 장 목차 4줄 */
   toc: [string, string, string, string];
 }
@@ -102,6 +107,7 @@ export function createFirstPageContext(req: FirstLetterRequest, checkin: Checkin
     .filter((a) => a.match === '불일치' && a.strength !== '균형')
     .map((a) => `${a.axis}: 사주로 보면 ${a.strength === '뚜렷' ? '뚜렷하게' : '약간'} ${a.direction} 쪽인데, 실제는 ${a.actual}`);
 
+  const seed = `${req.year}-${req.month}-${req.day}|${mbti}|${checkin.focus}|${checkin.mood}|${checkin.wish}`;
   const kst = new Date(createdAt.getTime() + 9 * 3600_000);
   const context: FirstPageContext = {
     readAt: { month: kst.getUTCMonth() + 1, day: kst.getUTCDate(), weekday: WEEKDAYS[kst.getUTCDay()]! },
@@ -117,6 +123,8 @@ export function createFirstPageContext(req: FirstLetterRequest, checkin: Checkin
     months,
     ipchunInPeriod: ipchunBetween(from, next),
     toc: tocFor(type, span, months, next),
+    scenes: pickBySeed(SCENES, seed, 4),
+    actions: pickBySeed(THEME_ACTIONS[current.theme], seed, 2),
   };
   const greeting = req.name?.trim() ? `${vocative(req.name.trim())}, 생일 축하해. 다음 생일의 나야.` : '생일 축하해. 다음 생일의 나야.';
   return { ok: true, context, greeting, stamp: first.stamp, nextBirthday: next, notes: first.notes };
@@ -144,7 +152,10 @@ export const FIRST_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편지�
 - 명리 용어(비견, 겁재, 식신, 상관, 편재, 정재, 편관, 정관, 편인, 정인, 일간, 세운, 오행, 십신, 월운 등), "MBTI", 네 글자 유형 이름(INFP 등). "사주"는 nature 에서 한 번만.
 - 달 이름(몇 월)은 now 의 오늘 날짜 말고는 쓰지 않는다. 알아 둘 달은 두 번째 장 몫이다.
 - 이직·투자·연애·결혼 결정 지시, 건강 예언과 몸 상태("앓았어"), 단정적 예언, "반드시", "무조건".
-- 직업·학업·가족을 짐작하게 하는 말: 회의, 회사, 출근, 퇴근, 학교, 시험, 과제, 엄마, 아빠, 애인, 남편, 아내 등. 장면은 누구에게나 있는 것(휴대폰, 단톡방, 달력, 이불, 밥, 날씨)에서만.
+- 직업·학업·가족을 짐작하게 하는 말: 회의, 회사, 출근, 퇴근, 학교, 시험, 과제, 엄마, 아빠, 애인, 남편, 아내 등.
+- 생일은 늘 "다음 생일"이라고 쓴다 ("이번 생일" 금지).
+- 장면은 이 사람에게 주어진 "생활 장면" 중에서만 1~2개 골라 쓴다. 휴대폰, 단톡방, 달력, 이불, 메모장은 너무 흔해서 쓰지 않는다.
+- "그래서 너는 이렇게 해" 같은 행동은 주어진 "내가 해 보고 효과 있었던 것"에서 고른다. 할 일을 적기·지우기·줄이기, 휴대폰 내려놓기 같은 흔한 정리 조언은 쓰지 않는다.
 - AI 말버릇: 표어 같은 문장, "그게 전부야", "A가 아니었어. 그건 B였어" 같은 반전 틀, 같은 말 되풀이, 셋씩 짝 맞춘 나열, 비유·추상어 잇기, "너라서", "오롯이", "차곡차곡", "한 걸음씩", "선물 같", "숨 돌릴 틈", "마음 한쪽", "쉼표", "~했을 거야".
 - "따끔하게 말할게"처럼 하려는 말을 미리 예고하지 않는다. "겁먹지 마", "나는 지나왔으니까" 같은 흔한 위로로 마무리하지 않는다.
 - 실제 사람의 입말로 쓴다. 한 번 읽고 이해되는 쉬운 말. 문장은 짧게. 이 지시에 나온 예시 문장을 그대로 가져다 쓰지 않는다.
@@ -175,6 +186,12 @@ export function firstPagePrompt(ctx: FirstPageContext, problems: string[] = []):
     '',
     `# 지금부터 다음 생일까지 (ahead 에서 미래의 내 경험으로)`,
     describe(ctx.current),
+    '',
+    '# 생활 장면 (이 중 1~2개만)',
+    ...ctx.scenes.map((x) => `- ${x}`),
+    '',
+    '# 내가 해 보고 효과 있었던 것 (cut 에서 핵심 직전에 멈출 때, 이 중 하나를 향해 간다. 첫 장에서는 다 말하지 않는다)',
+    ...ctx.actions.map((x) => `- ${x}`),
     '',
     '# 봉투 목차 (두 번째 장에 이 순서로 쓸 내용. cut 은 첫 줄의 핵심을 말하기 직전에서 멈춘다)',
     ...ctx.toc.map((t, i) => `${i + 1}. ${t}`),
@@ -208,6 +225,7 @@ const AI_TICS: readonly [RegExp, string][] = [
   [/따끔하게 (말|한마디)/, '"따끔하게 말할게"처럼 하려는 말을 미리 예고하기'],
   [/겁먹지 ?마|지나왔으니까/, '"겁먹지 마, 나는 지나왔으니까" 같은 흔한 위로'],
   [/이번 생일/, '"이번 생일" 대신 "다음 생일"'],
+  [/휴대폰|핸드폰|단톡방|달력|이불|메모장/, '너무 흔한 소품(휴대폰·단톡방·달력·이불·메모장) 대신 주어진 생활 장면'],
   [/나도 (이맘때|그맘때|그때쯤)/, '"나도 이맘때 ~했어"로 지금 네 행동을 짐작하기'],
 ];
 
