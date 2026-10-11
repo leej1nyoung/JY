@@ -144,9 +144,18 @@ export function monthlyGuide(dayMaster: Stem, dayBranch: Branch, mbti: string, f
   return out;
 }
 
-/** 첫 장이 끊기는 달: ③ 이번엔 잡아는 점수가 가장 높은 달, 그 밖은 가장 낮은 달 (같으면 앞의 달) */
+/**
+ * 첫 장이 끊기는 달: ③ 이번엔 잡아는 점수가 가장 높은 달, 그 밖은 가장 낮은 달.
+ * 점수가 같으면 더 뚜렷한 달 (좋은 쪽은 합 > 귀인, 나쁜 쪽은 충 > 형·원진), 그래도 같으면 앞의 달.
+ */
 export function keyMonthOf(months: MonthGuide[], best: boolean): MonthGuide | null {
+  const mark = (m: MonthGuide) =>
+    best ? (m.relation === '합' ? 2 : 0) + (m.helper ? 1 : 0) : m.relation === '충' ? 2 : m.relation === '형' || m.relation === '원진' ? 1 : 0;
   let pick: MonthGuide | null = null;
-  for (const m of months) if (!pick || (best ? m.score > pick.score : m.score < pick.score)) pick = m;
+  for (const m of months) {
+    if (!pick) { pick = m; continue; }
+    const better = best ? m.score > pick.score : m.score < pick.score;
+    if (better || (m.score === pick.score && mark(m) > mark(pick))) pick = m;
+  }
   return pick;
 }

@@ -41,3 +41,12 @@ describe('월별 공략 달력', () => {
     expect(isNobleHelper('庚', '寅')).toBe(false);
   });
 });
+
+describe('끊기는 달 동점 처리', () => {
+  it('좋은 달이 동점이면 합이 있는 달을 고른다 (서연: 壬子일 ESTJ, 1년)', () => {
+    const months = monthlyGuide('壬', '子', 'ESTJ', { year: 2026, month: 10, day: 11 }, { year: 2027, month: 8, day: 15 });
+    const best = keyMonthOf(months, true)!;
+    expect(best.month).toBe(1);
+    expect(best.relation).toBe('합');
+  });
+});
