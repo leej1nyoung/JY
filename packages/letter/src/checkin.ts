@@ -4,6 +4,8 @@ import type { Combination } from '@naite/saju';
 export const CHECKIN_FOCUS = ['사람 관계', '해야 할 일', '나 자신', '앞으로의 방향'] as const;
 export const CHECKIN_MOOD = ['지쳐 있음', '무난함', '들떠 있음', '복잡함'] as const;
 export const CHECKIN_WISH = ['쉬고 싶음', '뭔가 해내고 싶음', '사람과 가까워지고 싶음', '정리하고 싶음'] as const;
+export const CHECKIN_COPING = ['혼자 삭인다', '누군가에게 털어놓는다', '몸을 움직인다', '일단 자거나 쉰다'] as const;
+export const CHECKIN_TIME = ['대부분 혼자', '사람들 속에서', '이리저리 바쁘게', '집에서 조용히'] as const;
 
 export interface Checkin {
   /** 요즘 가장 마음 쓰이는 것 */
@@ -12,13 +14,18 @@ export interface Checkin {
   mood: (typeof CHECKIN_MOOD)[number];
   /** 다음 생일까지 바라는 것 */
   wish: (typeof CHECKIN_WISH)[number];
+  /** 힘들 때 나는 */
+  coping: (typeof CHECKIN_COPING)[number];
+  /** 요즘 내 시간은 */
+  time: (typeof CHECKIN_TIME)[number];
 }
 
 export function parseCheckin(raw: unknown): Checkin | null {
   const r = (raw ?? {}) as Record<string, unknown>;
   const ok = <T extends readonly string[]>(list: T, v: unknown): v is T[number] => typeof v === 'string' && list.includes(v);
   if (!ok(CHECKIN_FOCUS, r.focus) || !ok(CHECKIN_MOOD, r.mood) || !ok(CHECKIN_WISH, r.wish)) return null;
-  return { focus: r.focus, mood: r.mood, wish: r.wish };
+  if (!ok(CHECKIN_COPING, r.coping) || !ok(CHECKIN_TIME, r.time)) return null;
+  return { focus: r.focus, mood: r.mood, wish: r.wish, coping: r.coping, time: r.time };
 }
 
 export type LetterType = '미리 알려 줄게' | '이것만은 지켜' | '이번엔 잡아' | '방향을 고를 때';

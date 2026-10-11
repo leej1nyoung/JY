@@ -22,3 +22,16 @@ describe('행동·달의 계절감', () => {
     expect(monthNote(9, { year: 2026, month: 3, day: 1 }, { year: 2027, month: 3, day: 1 })).toContain('추석'); // 2026 추석: 9월 25일
   });
 });
+
+import { jargonHits } from '../src/rules.ts';
+describe('명리 용어 검사: 일상어는 빼고', () => {
+  it('일상어 속 글자는 잡지 않는다', () => {
+    for (const t of ['혼자 충전되는 편인데', '그건 상관없어', '좀 식상해', '계획을 세운 날', '습관성으로', '3일간 쉬었어', '확정인데', '어떤 편인지']) expect(jargonHits(t)).toEqual([]);
+  });
+  it('명리 용어는 잡는다', () => {
+    expect(jargonHits('올해는 편인이 들어와')).toEqual(['편인']);
+    expect(jargonHits('상관 기운이 세')).toEqual(['상관']);
+    expect(jargonHits('세운의 흐름')).toEqual(['세운']);
+    expect(jargonHits('일간이 庚')).toEqual(['일간']);
+  });
+});

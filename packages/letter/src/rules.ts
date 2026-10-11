@@ -20,8 +20,31 @@ export const LIFE_ASSUMPTIONS = [
 export const GUESSING = /을 거[야예]/;
 
 /** 문장에 들어 있는 규칙 위반 단어 목록 (없으면 빈 배열) */
+/**
+ * 명리 용어가 일상어 속에 섞인 경우는 빼고 찾는다.
+ * 예: "충전되는 편인데"(편인), "상관없어"(상관), "식상해"(식상), "계획을 세운 날"(세운), "습관성"(관성), "3일간"(일간), "확정인데"(정인)
+ */
+const JARGON_EXCEPT: Readonly<Record<string, RegExp>> = {
+  편인: /^(데|지|가|걸|게|것|\s거|\s것)/,
+  정인: /^(데|지|가|걸|게|것|\s거|\s것)/,
+  상관: /^\s*(없|있|이\s*없|하지|안\s)/,
+  식상: /^(해|하|한|했)/,
+  비견: /^(할|될|하|되)/,
+  세운: /^(\s|$|[.,!?])/,
+};
+export function jargonHits(text: string): string[] {
+  return JARGON.filter((w) => {
+    const re = new RegExp(`(?<![가-힣0-9])${w}`, 'g');
+    for (const m of text.matchAll(re)) {
+      const rest = text.slice((m.index ?? 0) + w.length);
+      if (!JARGON_EXCEPT[w]?.test(rest)) return true;
+    }
+    return false;
+  });
+}
+
 export function ruleViolations(text: string): string[] {
-  const found = [...BANNED_WORDS, ...JARGON, ...AI_TELLS, ...LIFE_ASSUMPTIONS].filter((w) => text.includes(w));
+  const found = [...[...BANNED_WORDS, ...AI_TELLS, ...LIFE_ASSUMPTIONS].filter((w) => text.includes(w)), ...jargonHits(text)];
   if (GUESSING.test(text)) found.push('~을 거야');
   return found;
 }

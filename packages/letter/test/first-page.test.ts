@@ -10,8 +10,8 @@ const JIN: FirstLetterRequest = {
 };
 const WIFE: FirstLetterRequest = { ...JIN, year: 1997, month: 4, day: 7, time: { hour: 11, minute: 59 }, birthplaceCode: '11350', mbti: 'ISFJ', name: null };
 const AT = new Date('2026-10-11T03:00:00Z'); // 한국 10월 11일 일요일 낮
-const JIN_CHECK: Checkin = { focus: '해야 할 일', mood: '지쳐 있음', wish: '사람과 가까워지고 싶음' };
-const WIFE_CHECK: Checkin = { focus: '앞으로의 방향', mood: '복잡함', wish: '쉬고 싶음' };
+const JIN_CHECK: Checkin = { focus: '해야 할 일', mood: '지쳐 있음', wish: '사람과 가까워지고 싶음', coping: '혼자 삭인다', time: '사람들 속에서' };
+const WIFE_CHECK: Checkin = { focus: '앞으로의 방향', mood: '복잡함', wish: '쉬고 싶음', coping: '일단 자거나 쉰다', time: '집에서 조용히' };
 
 function ctxOf(req: FirstLetterRequest, c: Checkin) {
   const r = createFirstPageContext(req, c, AT);
@@ -38,7 +38,7 @@ describe('편지 유형 판정 (손편지 예시와 같은 결과)', () => {
     expect(r.greeting).toBe('생일 축하해. 다음 생일의 나야.');
   });
   it('규칙 표', () => {
-    const c = (mood: Checkin['mood'], focus: Checkin['focus'] = '해야 할 일', wish: Checkin['wish'] = '쉬고 싶음'): Checkin => ({ focus, mood, wish });
+    const c = (mood: Checkin['mood'], focus: Checkin['focus'] = '해야 할 일', wish: Checkin['wish'] = '쉬고 싶음'): Checkin => ({ focus, mood, wish, coping: '혼자 삭인다', time: '대부분 혼자' });
     expect(letterType('둘 다 편함', c('지쳐 있음'))).toBe('이번엔 잡아');
     expect(letterType('하나 버거움 + 하나 편함', c('무난함', '해야 할 일', '정리하고 싶음'))).toBe('방향을 고를 때');
     expect(letterType('둘 다 버거움', c('무난함', '앞으로의 방향'))).toBe('미리 알려 줄게');
@@ -48,6 +48,7 @@ describe('편지 유형 판정 (손편지 예시와 같은 결과)', () => {
   it('체크인 검사', () => {
     expect(parseCheckin(JIN_CHECK)).toEqual(JIN_CHECK);
     expect(parseCheckin({ ...JIN_CHECK, mood: '행복함' })).toBeNull();
+    expect(parseCheckin({ ...JIN_CHECK, coping: undefined })).toBeNull();
   });
 });
 

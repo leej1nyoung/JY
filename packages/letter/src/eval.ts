@@ -1,7 +1,7 @@
 // 첫 장 AI 자동 검사 (지인 테스트 전 품질 확인). 가상의 사람들, 채점관 지시, 점수 계산.
 // AI 호출은 웹 서버(/eval)에서 한다. 여기는 순수 함수만 둔다.
 import { BIRTHPLACES } from '@naite/saju';
-import { CHECKIN_FOCUS, CHECKIN_MOOD, CHECKIN_WISH, type Checkin, type LetterType } from './checkin.ts';
+import { CHECKIN_COPING, CHECKIN_FOCUS, CHECKIN_MOOD, CHECKIN_TIME, CHECKIN_WISH, type Checkin, type LetterType } from './checkin.ts';
 import { createFirstPageContext, type FirstPageContext } from './first-page-ai.ts';
 import type { FirstLetterRequest } from './first-letter.ts';
 
@@ -51,7 +51,9 @@ export function evalProfiles(n: number, createdAt: Date, seed = 20261011): EvalP
       confirmSelf: true,
       confirmAge: true,
     };
-    const checkin: Checkin = { focus: pick(CHECKIN_FOCUS), mood: pick(CHECKIN_MOOD), wish: pick(CHECKIN_WISH) };
+    const checkin: Checkin = {
+      focus: pick(CHECKIN_FOCUS), mood: pick(CHECKIN_MOOD), wish: pick(CHECKIN_WISH), coping: pick(CHECKIN_COPING), time: pick(CHECKIN_TIME),
+    };
     const ctx = createFirstPageContext(req, checkin, createdAt);
     if (!ctx.ok) continue;
     const t = ctx.context.type;
@@ -68,7 +70,7 @@ export function profileSummary(ctx: FirstPageContext): string {
   const easy = ctx.current.feelings.filter((f) => f.feeling === '편함').map((f) => f.mind);
   return [
     `MBTI ${ctx.mbti}`,
-    `요즘 마음 쓰이는 것: ${ctx.checkin.focus} / 마음 상태: ${ctx.checkin.mood} / 바라는 것: ${ctx.checkin.wish}`,
+    `요즘 마음 쓰이는 것: ${ctx.checkin.focus} / 마음 상태: ${ctx.checkin.mood} / 바라는 것: ${ctx.checkin.wish} / 힘들 때: ${ctx.checkin.coping} / 요즘 내 시간: ${ctx.checkin.time}`,
     `타고난 결: ${ctx.nature.image}`,
     `지금부터 다음 생일까지(${ctx.span}): ${ctx.current.situation}` +
       (hard.length ? ` / 버거운 쪽: ${hard.join(', ')}` : '') +
