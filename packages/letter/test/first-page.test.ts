@@ -24,7 +24,7 @@ describe('편지 유형 판정 (손편지 예시와 같은 결과)', () => {
     const r = ctxOf(JIN, JIN_CHECK);
     expect(r.context.type).toBe('이것만은 지켜');
     expect(r.context.span).toBe('넉 달');
-    expect(r.context.toc).toEqual(['이 넉 달 중 제일 조심할 달과 버티는 법', '달마다 공략: 10월부터 2월까지', '2월 23일 생일부터 1년의 흐름', '미래의 내가 꼭 부탁하고 싶은 한 가지']);
+    expect(r.context.toc).toEqual(['이 넉 달 중 제일 조심할 달과 버티는 법', '달마다 공략: 10월부터 내년 2월까지', '2월 23일 생일부터 1년의 흐름', '미래의 내가 꼭 부탁하고 싶은 한 가지']);
     expect(r.context.keyMonth!.month).toBe(1);
     expect(r.context.sajuVsMbti.join(' ')).toContain('E/I: 사주로 보면 뚜렷하게 E 쪽인데, 실제는 I');
     expect(r.context.ipchunInPeriod).toBe(true);
@@ -62,9 +62,9 @@ describe('AI 에 넘기는 재료', () => {
 });
 
 const GOOD = {
-  now: '10월 11일 일요일이네. 내일 또 한 주가 시작된다는 게 벌써 좀 무겁지? 딱 그때의 너한테 써 보려고 해.',
+  now: '10월 11일 일요일이네. 내일 또 한 주가 시작된다는 게 벌써 좀 무거운 날이야. 딱 그때의 너한테 써 보려고 해.',
   nature: '사주로 보면 너는 겉은 단단한 쇠 같은 사람이래. 한번 정하면 끝까지 가는. 근데 속은 말 한마디에도 오래 마음이 쓰이는 편이지?',
-  present: '요즘은 할 일은 줄 서 있는데 몸은 벌써 지쳐 있지? 보고 싶은 사람한테 연락하는 것도 자꾸 다음으로 미뤄지고.',
+  present: '요즘은 할 일은 줄 서 있는데 몸은 벌써 지쳐 있잖아. 그래도 사람이랑은 좀 더 가까워지고 싶고.',
   ahead: '겁주려는 건 아닌데, 이 넉 달은 일이 예고 없이 떨어지는 때야. 내가 정한 순서대로 흘러가는 날이 거의 없었어. 지친 채로 들어가면 생각보다 금방 바닥나.',
   cut: '그래서 하나만 미리 말해 줄게. 나 이거 하나 때문에 이 넉 달을 거의 날렸거든. 너는 꼭',
 };
@@ -75,6 +75,9 @@ describe('첫 장 결과 검사', () => {
     const r = checkFirstPage(GOOD, ctx);
     expect(r.problems).toEqual([]);
     expect(r.page!.paragraphs.at(-1)).toBe(GOOD.cut);
+  });
+  it('물음표는 한 번만 (맞히려고 묻는 말투 줄이기)', () => {
+    expect(checkFirstPage({ ...GOOD, now: GOOD.now + ' 요즘 지쳐 있지?' }, ctx).problems.join(' ')).toContain('물음표');
   });
   it('끊기가 문장으로 끝나면 다시 쓰게 한다', () => {
     expect(checkFirstPage({ ...GOOD, cut: GOOD.cut + ' 쉬어.' }, ctx).problems.join(' ')).toContain('문장 중간');

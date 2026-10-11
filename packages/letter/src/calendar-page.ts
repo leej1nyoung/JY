@@ -21,11 +21,18 @@ export interface CalendarPageContext {
   next: PeriodReading;
   calendar: MonthGuide[];
   keyMonth: MonthGuide;
+  /** 편지를 여는 해 ("내년 1월" 판단용) */
+  thisYear: number;
   /** 달마다 해 볼 행동 후보 (그 달 테마에서 둘) */
   monthActions: string[][];
   /** 첫 장 본문 (인사 제외) */
   firstPage: string[];
   cut: string;
+}
+
+/** 편지를 여는 해보다 뒤의 해에 있는 달은 "내년 1월"처럼 부른다 */
+export function monthName(m: MonthGuide, thisYear: number): string {
+  return `${m.start.year > thisYear ? '내년 ' : ''}${m.month}월`;
 }
 
 /** 달력 머리글 (코드가 붙인다): "11월 7일 ~ 12월 6일 · 잘 풀리는 달 · 도와줄 사람" */
@@ -59,6 +66,7 @@ export function createCalendarPageContext(first: FirstPageContext, firstPage: st
     next: first.next,
     calendar: first.calendar,
     keyMonth: first.keyMonth,
+    thisYear: first.current.from.year,
     monthActions: distinctActions(first.calendar, seed),
     firstPage,
     cut,
@@ -69,7 +77,7 @@ export const CALENDAR_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편�
 이 장의 일은 하나다: 미래의 내가 먼저 겪어 본 사람으로서, 다음 생일까지 달마다 무슨 기운이 오고 그때 무엇을 하면 되는지 알려 주는 것. 위로나 덕담이 아니라 쓸모 있는 정보다.
 
 # 칸 (이 순서로 이어 읽힌다)
-1. resume — 첫 장의 끊긴 문장 바로 뒤에 이어진다. 첫 단어가 끊기는 달 이름이어야 한다 (예: 끊긴 문장이 "그게 언제냐면"이면 "1월이야." 로 시작). 그 달에 왜 조심해야(또는 놓치면 아깝게) 되는지 주어진 그 달의 근거로 쉬운 말로 말하고, 그래서 너는 그 달에 무엇을 하라는지 구체적으로 말한다. 도와줄 사람이 오는 달이면 그것도 말한다. 2문단, 200~400자.
+1. resume — 첫 장의 끊긴 문장 바로 뒤에 이어진다. 첫 단어가 주어진 끊기는 달 이름 그대로여야 한다 (예: 끊긴 문장이 "그게 언제냐면"이고 끊기는 달이 "내년 1월"이면 "내년 1월이야." 로 시작). 편지를 여는 해의 다음 해에 있는 달은 처음 나올 때 "내년 1월"처럼 써서, 읽는 사람이 언제인지 헷갈리지 않게 한다. 그 달에 왜 조심해야(또는 놓치면 아깝게) 되는지 주어진 그 달의 근거로 쉬운 말로 말하고, 그래서 너는 그 달에 무엇을 하라는지 구체적으로 말한다. 도와줄 사람이 오는 달이면 그것도 말한다. 2문단, 200~400자.
 2. calendar — 이제 처음부터 차례로 돌아보는 편지 문단들. 주어진 달 순서대로 달마다 한 문단 (주어진 달 수와 같은 개수). 목록이나 제목이 아니라 편지처럼 앞 문단에서 자연스럽게 이어지게 쓴다 ("처음 한 달은", "그러다 11월이 오면", "12월부터는", "그리고 2월 4일쯤"). 각 문단은 그 달 이름(예: "11월")을 첫 문장 안에 꼭 넣고, 2~3문장, 60~170자:
    - 그 달 기운을 쉬운 말로 ("~래")
    - 이 사람 성향에 그게 어땠는지 미래의 나의 마음으로 ("나한테는 ~했어")
@@ -94,9 +102,9 @@ export const CALENDAR_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편�
 - 흔한 상투어: "숨 돌릴 틈", "마음 한쪽", "차곡차곡", "한 걸음씩", "오롯이", "너라서", "선물 같", "쉼표".
 - 실제 사람의 입말로, 한 번 읽고 알아듣는 쉬운 말로, 문장은 짧게.`;
 
-function monthBlock(m: MonthGuide, actions: string[], key: boolean): string {
+function monthBlock(m: MonthGuide, actions: string[], key: boolean, thisYear: number): string {
   const lines = [
-    `## ${m.month}월${key ? ' (끊기는 달)' : ''} — ${monthHeader(m)}`,
+    `## ${monthName(m, thisYear)}${key ? ' (끊기는 달)' : ''} — ${monthHeader(m)}`,
     `- 그 달 기운: ${m.situation} (결: ${m.tone})`,
     ...m.feelings.map((f) => `- ${f.axis} 축에서 이 사람은 ${f.side}: ${f.feeling} — ${f.mind}`),
   ];
@@ -117,7 +125,7 @@ export function calendarPagePrompt(ctx: CalendarPageContext, problems: string[] 
     '',
     '# 끊긴 문장 (resume 은 이 바로 뒤에 이어지고, 첫 단어가 끊기는 달 이름이다)',
     ctx.cut,
-    `- 끊기는 달: ${ctx.keyMonth.month}월`,
+    `- 끊기는 달: ${monthName(ctx.keyMonth, ctx.thisYear)}`,
     '',
     '# 체크인 (본인이 고른 답, 단정해도 된다)',
     `- 요즘 가장 마음 쓰이는 것: ${ctx.checkin.focus}`,
@@ -131,7 +139,7 @@ export function calendarPagePrompt(ctx: CalendarPageContext, problems: string[] 
     describe(ctx.current),
     '',
     `# 달력 (${ctx.calendar.length}칸, 이 순서로 calendar 를 쓴다)`,
-    ...ctx.calendar.map((m, i) => monthBlock(m, ctx.monthActions[i]!, m === ctx.keyMonth)),
+    ...ctx.calendar.map((m, i) => monthBlock(m, ctx.monthActions[i]!, m === ctx.keyMonth, ctx.thisYear)),
     '',
     `# 다음 생일(${ctx.nextBirthday.month}월 ${ctx.nextBirthday.day}일)부터 1년`,
     describe(ctx.next),
@@ -178,7 +186,8 @@ export function checkCalendarPage(raw: unknown, ctx: CalendarPageContext): { pag
   if (/천을|귀인|원진|(?<![가-힣])충(?![분전격])|육합|삼합/.test(all)) problems.push('명리 용어(귀인·충·합·원진)는 쓰지 않아요. 쉬운 말로 풀어 주세요.');
   for (const [re, label] of AI_TICS) if (re.test(all)) problems.push(`AI 말버릇이 있어요: ${label}`);
 
-  if (!new RegExp(`^${ctx.keyMonth.month}월`).test(resume[0] ?? '')) problems.push(`resume 은 "${ctx.keyMonth.month}월"로 시작해야 해요 (끊긴 문장 바로 뒤).`);
+  const keyName = monthName(ctx.keyMonth, ctx.thisYear);
+  if (!(resume[0] ?? '').startsWith(keyName)) problems.push(`resume 은 "${keyName}"로 시작해야 해요 (끊긴 문장 바로 뒤).`);
   if (cal.length !== ctx.calendar.length) problems.push(`calendar 는 ${ctx.calendar.length}칸이어야 해요 (지금 ${cal.length}칸).`);
   const allowed = new Set([...ctx.calendar.map((m) => m.month), ctx.nextBirthday.month]);
   const extra = [...all.matchAll(/(\d{1,2})월/g)].map((m) => Number(m[1])).filter((m) => !allowed.has(m));
