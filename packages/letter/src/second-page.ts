@@ -108,7 +108,7 @@ export interface SecondPageContext {
 
 const cmp = (a: CivilDate, b: CivilDate) => a.year - b.year || a.month - b.month || a.day - b.day;
 
-function reading(dayMaster: Stem, mbti: string, from: CivilDate, to: CivilDate): PeriodReading {
+export function reading(dayMaster: Stem, mbti: string, from: CivilDate, to: CivilDate): PeriodReading {
   const seun = analyzeSeun(dayMaster, dominantSeun(from, to).pillar);
   const { axes, combination } = mbtiFeelings(seun.theme, mbti);
   return {
@@ -199,7 +199,7 @@ export const SECOND_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편지�
 - headline 30자 이내. moment 2~3문단, 300~550자. guide 2문단 정도, 200~400자. flow 2~3문단, 250~450자. request 한 문장, 60자 이내.
 - 문단은 빈 줄로 나눈다. 제목·번호·따옴표 장식은 붙이지 않는다.`;
 
-function describe(p: PeriodReading): string {
+export function describe(p: PeriodReading): string {
   const lines = [
     `- 기간: ${date(p.from)} ~ ${date(p.to)}`,
     `- 그 시기의 상황: ${p.situation}`,

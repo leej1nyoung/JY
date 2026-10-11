@@ -773,3 +773,54 @@ a {
   font-size: 19px;
   color: var(--ink-strong);
 }
+
+/* ── 운영자: 첫 장 자동 검사 ── */
+.eval-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.eval-case {
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.eval-meta {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--sub);
+}
+
+.eval-summary {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--sub);
+  background: #efe7fa;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 0 0 10px;
+}
+
+.eval-letter p {
+  font-family: var(--font-letter), serif;
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0 0 10px;
+}
+
+.eval-notes {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.eval-all {
+  margin-top: 24px;
+}

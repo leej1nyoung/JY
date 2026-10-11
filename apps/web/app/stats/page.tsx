@@ -1,21 +1,13 @@
 import type { Metadata } from 'next';
-import { timingSafeEqual } from 'node:crypto';
 import { WORTH, buildFunnel, type FunnelRow } from '@/lib/events';
 import { isStoreConfigured, loadCounts } from '@/lib/event-store';
 import { Logo } from '@/components/Logo';
 import { NoTrack } from './NoTrack';
 import { secondPageStatus } from '@/lib/second-page-ai';
+import { keyMatches } from '@/lib/stats-key';
 
 export const metadata: Metadata = { title: '측정 — 나이테' };
 export const dynamic = 'force-dynamic';
-
-function keyMatches(given: string | undefined): boolean {
-  const expected = process.env.STATS_KEY;
-  if (!expected || !given) return false;
-  const a = Buffer.from(given);
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ key?: string }> }) {
   const { key } = await searchParams;

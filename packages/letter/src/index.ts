@@ -5,3 +5,6 @@ export * as templates from './templates.ts';
 export * from './anchor.ts';
 export * from './rules.ts';
 export * from './second-page.ts';
+export * from './checkin.ts';
+export * from './first-page-ai.ts';
+export * from './eval.ts';
