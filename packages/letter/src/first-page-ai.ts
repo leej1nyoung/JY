@@ -1,13 +1,13 @@
 // 첫해 첫 장 AI 생성 (CLAUDE.md 5-2 "첫해 첫 장"). 재료·지시·결과 검사. AI 호출은 웹 서버에서 한다.
 //
 // - 위로가 아니라 "미래의 내가 주는 공략집". 지금의 나를 먼저 알아봐 주고, 그다음 미래.
-// - 단정 규칙: 체크인·MBTI(본인이 말한 것)만 단정, 사주는 "~래", 앞으로의 일은 미래의 내 경험으로만.
+// - 단정 규칙: 체크인·MBTI(본인이 말한 것)만 단정, 사주는 "~래", 앞으로의 일은 사주 흐름 + 그때의 내 마음으로만 (구체적 사건·생활 장면은 지어내지 않는다).
 // - AI 에는 계산된 사주 값과 체크인만 넘긴다. 생년월일·출생지·이름은 넘기지 않는다 (인사는 코드가 붙인다).
 import {
   calculateSaju, compareWithMbti, ipchunUtc, koreaCivilToUtc, parseMbti, sajuAxisScores,
   type Branch, type CivilDate, type Stem,
 } from '@naite/saju';
-import { pickBySeed, SCENES, THEME_ACTIONS } from './scenes.ts';
+import { pickBySeed, THEME_ACTIONS } from './scenes.ts';
 import { spanWord, vocative } from './compose.ts';
 import { createFirstLetter, type FirstLetterField, type FirstLetterRequest, type LetterStamp } from './first-letter.ts';
 import { describe, keyMonths, followingBirthday, reading, type KeyMonths, type PeriodReading } from './second-page.ts';
@@ -46,8 +46,6 @@ export interface FirstPageContext {
   months: KeyMonths;
   /** 기간 안에 입춘(세운이 바뀌는 때)이 있으면 true */
   ipchunInPeriod: boolean;
-  /** 이 사람 편지에 쓸 생활 장면 (사람마다 다르게 고른다) */
-  scenes: string[];
   /** 내가 그 시기에 해 보고 효과 있었던 행동 후보 (주 테마별) */
   actions: string[];
   /** 봉투에 보일 두 번째 장 목차 4줄 */
@@ -123,7 +121,6 @@ export function createFirstPageContext(req: FirstLetterRequest, checkin: Checkin
     months,
     ipchunInPeriod: ipchunBetween(from, next),
     toc: tocFor(type, span, months, next),
-    scenes: pickBySeed(SCENES, seed, 4),
     actions: pickBySeed(THEME_ACTIONS[current.theme], seed, 2),
   };
   const greeting = req.name?.trim() ? `${vocative(req.name.trim())}, 생일 축하해. 다음 생일의 나야.` : '생일 축하해. 다음 생일의 나야.';
@@ -139,22 +136,21 @@ export const FIRST_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편지�
 1. now — 편지를 여는 지금: 날짜와 요일, 그 계절의 공기(날씨·해·바람), 그리고 마음 상태(체크인)에 맞닿은 묻는 말 한마디. 읽는 사람이 지금 무엇을 하고 있는지(휴대폰을 본다, 이불 속에 있다, 천장을 본다 등)는 쓰지 않는다. "나도 이맘때 ~하곤 했어"처럼 내 얘기인 척 지금 네 행동을 짐작하는 것도 안 된다. 마음 쓰이는 것·바라는 것은 여기서 말하지 않는다 (present 몫). 1문단.
 2. nature — 타고난 나: 주어진 일간의 결로 "사주로 보면 너는 ~래" 하고 말하고, MBTI 성향과 겹쳐 "근데 속은 ~한 편이지?"처럼 묻는다. 1문단.
 3. present — 지금의 나: 체크인 세 답으로 "요즘 ~지?" 하고 짚는다. now 에서 한 말을 되풀이하지 않는다. 체크인에 없는 마음(예: 바라는 것이 "뭔가 해내고 싶음"인데 "쉬고 싶은 마음")을 덧붙이지 않는다. 1문단.
-4. ahead — 이 기간 예고: 주어진 시기의 기운과 버거운 쪽을, 미래의 내가 이미 겪은 일로 말한다. 편지 유형에 맞는 세기로. 주어진 "그 시기의 상황"과 편함·버거움 설명 문구를 그대로 옮기거나 "~시기래"로 요약하지 말고, 내가 그때 실제로 겪은 장면(휴대폰, 단톡방, 달력, 이불, 밥, 날씨 같은 것)과 그때 내가 한 행동으로 보여 준다. 1~2문단.
+4. ahead — 이 기간 예고: 이 기간의 흐름을 "사주로 보면 이 ○○은 ~한 때래"처럼 쉬운 말로 한 번 말하고, 이 사람의 성향에 그 흐름이 어땠는지(버거운 쪽·편한 쪽)를 미래의 나의 마음으로 말한다 ("그게 나한테는 좀 버거웠어", "순서가 자꾸 흔들려서 불안했어"). 편지 유형에 맞는 세기로. 구체적인 사건이나 생활 장면(설거지, 빨래, 택배, 커피, 산책, 휴대폰 같은 것)은 지어내지 않는다. 추상어·비유도 쓰지 않는다: "안을 들여다보는 시간" 대신 "혼자 생각할 일이 많아지는 때"처럼 한 번 읽고 알아듣는 말로. 주어진 설명 문구를 그대로 옮기지 않는다. 1~2문단.
 5. cut — 끊기: 봉투 목차 첫 줄의 핵심을 말하기 바로 직전에서, 문장 중간에 멈춘다. 마침표·물음표·느낌표로 끝내지 않는다. 무엇에 관한 얘기인지(주제)는 드러나야 한다. "그걸", "이거"로 가리키기만 하고 내용이 없는 끊기는 안 된다. 예: "그래서 하나만 미리 말해 줄게. 나 이거 하나 때문에 이 넉 달을 거의 날렸거든. 너는 꼭" (그대로 베끼지 말고 이 사람에 맞게)
 
 # 단정 규칙 (가장 중요)
 - 단정해도 되는 것: 본인이 알려 준 체크인 답과 MBTI. ("요즘 할 일은 쌓여 있는데 지쳐 있지?")
 - 사주로 계산한 타고난 결과 시기의 기운은 "~래", "~대"로만.
-- 앞으로의 일은 "나는 그때 ~했어"처럼 미래의 내 경험으로만.
+- 앞으로의 일은 사주 흐름("~래")과 그때의 내 마음("~했어")으로만. 구체적인 사건·장면은 지어내지 않는다.
 - 금지: 지금 이 사람의 구체적인 습관·행동·말버릇·사생활을 근거 없이 단정하기 ("너는 먼저 손드는 타입이잖아", "힘든 티를 안 내잖아"). 한 줄만 틀려도 편지 전체가 거짓말이 된다. 성향을 말할 땐 묻는 말투로.
 
 # 쓰면 안 되는 것
-- 명리 용어(비견, 겁재, 식신, 상관, 편재, 정재, 편관, 정관, 편인, 정인, 일간, 세운, 오행, 십신, 월운 등), "MBTI", 네 글자 유형 이름(INFP 등). "사주"는 nature 에서 한 번만.
+- 명리 용어(비견, 겁재, 식신, 상관, 편재, 정재, 편관, 정관, 편인, 정인, 일간, 세운, 오행, 십신, 월운 등), "MBTI", 네 글자 유형 이름(INFP 등). "사주"는 nature 와 ahead 에서 한 번씩만.
 - 달 이름(몇 월)은 now 의 오늘 날짜 말고는 쓰지 않는다. 알아 둘 달은 두 번째 장 몫이다.
 - 이직·투자·연애·결혼 결정 지시, 건강 예언과 몸 상태("앓았어"), 단정적 예언, "반드시", "무조건".
 - 직업·학업·가족을 짐작하게 하는 말: 회의, 회사, 출근, 퇴근, 학교, 시험, 과제, 엄마, 아빠, 애인, 남편, 아내 등.
 - 생일은 늘 "다음 생일"이라고 쓴다 ("이번 생일" 금지).
-- 장면은 이 사람에게 주어진 "생활 장면" 중에서만 1~2개 골라 쓴다. 휴대폰, 단톡방, 달력, 이불, 메모장은 너무 흔해서 쓰지 않는다.
 - "그래서 너는 이렇게 해" 같은 행동은 주어진 "내가 해 보고 효과 있었던 것"에서 고른다. 할 일을 적기·지우기·줄이기, 휴대폰 내려놓기 같은 흔한 정리 조언은 쓰지 않는다.
 - AI 말버릇: 표어 같은 문장, "그게 전부야", "A가 아니었어. 그건 B였어" 같은 반전 틀, 같은 말 되풀이, 셋씩 짝 맞춘 나열, 비유·추상어 잇기, "너라서", "오롯이", "차곡차곡", "한 걸음씩", "선물 같", "숨 돌릴 틈", "마음 한쪽", "쉼표", "~했을 거야".
 - "따끔하게 말할게"처럼 하려는 말을 미리 예고하지 않는다. "겁먹지 마", "나는 지나왔으니까" 같은 흔한 위로로 마무리하지 않는다.
@@ -186,9 +182,6 @@ export function firstPagePrompt(ctx: FirstPageContext, problems: string[] = []):
     '',
     `# 지금부터 다음 생일까지 (ahead 에서 미래의 내 경험으로)`,
     describe(ctx.current),
-    '',
-    '# 생활 장면 (이 중 1~2개만)',
-    ...ctx.scenes.map((x) => `- ${x}`),
     '',
     '# 내가 해 보고 효과 있었던 것 (cut 에서 핵심 직전에 멈출 때, 이 중 하나를 향해 간다. 첫 장에서는 다 말하지 않는다)',
     ...ctx.actions.map((x) => `- ${x}`),
@@ -225,7 +218,7 @@ const AI_TICS: readonly [RegExp, string][] = [
   [/따끔하게 (말|한마디)/, '"따끔하게 말할게"처럼 하려는 말을 미리 예고하기'],
   [/겁먹지 ?마|지나왔으니까/, '"겁먹지 마, 나는 지나왔으니까" 같은 흔한 위로'],
   [/이번 생일/, '"이번 생일" 대신 "다음 생일"'],
-  [/휴대폰|핸드폰|단톡방|달력|이불|메모장/, '너무 흔한 소품(휴대폰·단톡방·달력·이불·메모장) 대신 주어진 생활 장면'],
+  [/휴대폰|핸드폰|단톡방|달력|이불|메모장|설거지|빨래|세탁기|택배|라면|배달|샤워|커피|산책/, '지어낸 생활 장면 (사주 흐름과 마음으로만 말하기)'],
   [/나도 (이맘때|그맘때|그때쯤)/, '"나도 이맘때 ~했어"로 지금 네 행동을 짐작하기'],
 ];
 
@@ -243,7 +236,7 @@ export function checkFirstPage(raw: unknown, ctx: FirstPageContext): { page: Fir
   const words = ruleViolations(all);
   if (words.length > 0) problems.push(`쓰면 안 되는 표현이 들어 있어요: ${words.join(', ')}`);
   if (/MBTI|[EI][NS][TF][JP]/.test(all)) problems.push('"MBTI"나 유형 이름은 쓰지 않아요.');
-  if ((all.match(/사주/g) ?? []).length > 1) problems.push('"사주"는 nature 에서 한 번만 써요.');
+  if ((all.match(/사주/g) ?? []).length > 2) problems.push('"사주"는 nature 와 ahead 에서 한 번씩만 써요.');
   for (const [re, label] of AI_TICS) if (re.test(all)) problems.push(`AI 말버릇이 있어요: ${label}`);
   const notNow = fields.filter((k) => k !== 'now').flatMap((k) => v[k]).join(' ');
   if (/\d{1,2}월/.test(notNow)) problems.push('오늘 날짜 말고는 달 이름(몇 월)을 쓰지 않아요. 알아 둘 달은 두 번째 장 몫이에요.');

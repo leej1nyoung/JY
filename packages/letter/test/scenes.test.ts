@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { monthNote, pickBySeed, SCENES, THEME_ACTIONS } from '../src/scenes.ts';
+import { monthNote, pickBySeed, THEME_ACTIONS } from '../src/scenes.ts';
 
-describe('생활 장면·행동·달의 계절감', () => {
-  it('같은 seed 면 같은 장면, 겹치지 않게 n개', () => {
-    const a = pickBySeed(SCENES, 'x', 4);
-    expect(pickBySeed(SCENES, 'x', 4)).toEqual(a);
+describe('행동·달의 계절감', () => {
+  it('같은 seed 면 같은 것, 겹치지 않게 n개', () => {
+    const list = Object.values(THEME_ACTIONS).flat();
+    const a = pickBySeed(list, 'x', 4);
+    expect(pickBySeed(list, 'x', 4)).toEqual(a);
     expect(new Set(a).size).toBe(4);
-    expect(pickBySeed(SCENES, 'y', 4)).not.toEqual(a);
+    expect(pickBySeed(list, 'y', 4)).not.toEqual(a);
   });
-  it('장면·행동에 흔한 소품이나 직업·가족 말이 없다', () => {
-    const all = [...SCENES, ...Object.values(THEME_ACTIONS).flat()].join(' ');
+  it('행동에 흔한 소품이나 직업·가족 말이 없다', () => {
+    const all = Object.values(THEME_ACTIONS).flat().join(' ');
     expect(all).not.toMatch(/휴대폰|단톡방|달력|이불|메모장|회사|학교|엄마|애인/);
   });
   it('설·추석은 음력을 양력으로 바꿔 그 해의 달에 붙인다', () => {
