@@ -194,7 +194,7 @@ export function LetterView({ secondPageFree: initialFree = false }: { secondPage
             <li>{momentLabel}, 그날 네가 한 일</li>
             <li>다음 생일까지 꼭 알아 둘 것</li>
             <li>
-              {b.month}월 {b.day}일 생일부터 1년, 달라지는 흐름
+              {b.month}월 {b.day}일 생일부터 1년의 흐름
             </li>
             <li>미래의 내가 꼭 부탁하고 싶은 한 가지</li>
           </ol>

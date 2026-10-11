@@ -61,7 +61,7 @@ export function tocFor(type: LetterType, span: string, months: KeyMonths, nextBi
     : months.shaky[0]
       ? `${months.shaky[0]}월, 한 박자 쉬어 갈 달`
       : '다음 생일까지 꼭 알아 둘 것';
-  return [first[type], second, `${nextBirthday.month}월 ${nextBirthday.day}일 생일부터 1년, 달라지는 흐름`, '미래의 내가 꼭 부탁하고 싶은 한 가지'];
+  return [first[type], second, `${nextBirthday.month}월 ${nextBirthday.day}일 생일부터 1년의 흐름`, '미래의 내가 꼭 부탁하고 싶은 한 가지'];
 }
 
 function ipchunBetween(from: CivilDate, to: CivilDate): boolean {

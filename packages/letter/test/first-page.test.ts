@@ -24,7 +24,7 @@ describe('편지 유형 판정 (손편지 예시와 같은 결과)', () => {
     const r = ctxOf(JIN, JIN_CHECK);
     expect(r.context.type).toBe('이것만은 지켜');
     expect(r.context.span).toBe('넉 달');
-    expect(r.context.toc).toEqual(['이 넉 달 동안 딱 하나 조심할 것', '11월, 미뤄 둔 걸 꺼내기 좋은 달', '2월 23일 생일부터 1년, 달라지는 흐름', '미래의 내가 꼭 부탁하고 싶은 한 가지']);
+    expect(r.context.toc).toEqual(['이 넉 달 동안 딱 하나 조심할 것', '11월, 미뤄 둔 걸 꺼내기 좋은 달', '2월 23일 생일부터 1년의 흐름', '미래의 내가 꼭 부탁하고 싶은 한 가지']);
     expect(r.context.sajuVsMbti.join(' ')).toContain('E/I: 사주로 보면 뚜렷하게 E 쪽인데, 실제는 I');
     expect(r.context.ipchunInPeriod).toBe(true);
     expect(r.greeting).toBe('진영아, 생일 축하해. 다음 생일의 나야.');
