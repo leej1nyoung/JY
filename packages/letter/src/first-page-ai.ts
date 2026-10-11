@@ -8,6 +8,7 @@ import {
   type Branch, type CivilDate, type Stem,
 } from '@naite/saju';
 import { pickBySeed, THEME_ACTIONS } from './scenes.ts';
+import { keyMonthOf, monthlyGuide, type MonthGuide } from './monthly.ts';
 import { spanWord, vocative } from './compose.ts';
 import { createFirstLetter, type FirstLetterField, type FirstLetterRequest, type LetterStamp } from './first-letter.ts';
 import { describe, keyMonths, followingBirthday, reading, type KeyMonths, type PeriodReading } from './second-page.ts';
@@ -44,6 +45,10 @@ export interface FirstPageContext {
   current: PeriodReading;
   next: PeriodReading;
   months: KeyMonths;
+  /** 월별 공략 달력 (두 번째 장의 중심) */
+  calendar: MonthGuide[];
+  /** 첫 장이 끊기는 달 (두 번째 장 첫 줄에서 밝힌다) */
+  keyMonth: MonthGuide | null;
   /** 기간 안에 입춘(세운이 바뀌는 때)이 있으면 true */
   ipchunInPeriod: boolean;
   /** 내가 그 시기에 해 보고 효과 있었던 행동 후보 (주 테마별) */
@@ -52,18 +57,15 @@ export interface FirstPageContext {
   toc: [string, string, string, string];
 }
 
-export function tocFor(type: LetterType, span: string, months: KeyMonths, nextBirthday: CivilDate): FirstPageContext['toc'] {
+/** 봉투 목차. 첫 줄의 달 이름은 두 번째 장에서 밝히므로 여기서는 숨긴다 */
+export function tocFor(type: LetterType, span: string, calendar: MonthGuide[], nextBirthday: CivilDate): FirstPageContext['toc'] {
   const first: Record<LetterType, string> = {
-    '미리 알려 줄게': `이 ${span}, 미리 알아 둘 고비`,
-    '이것만은 지켜': `이 ${span} 동안 딱 하나 조심할 것`,
-    '이번엔 잡아': `이 ${span}, 놓치면 아까운 것`,
-    '방향을 고를 때': `이 ${span}, 서두르지 말아야 할 것`,
+    '미리 알려 줄게': `이 ${span} 중 제일 조심할 달과 피하는 법`,
+    '이것만은 지켜': `이 ${span} 중 제일 조심할 달과 버티는 법`,
+    '이번엔 잡아': `이 ${span} 중 놓치면 아까운 달`,
+    '방향을 고를 때': `이 ${span} 중 서두르면 안 되는 달`,
   };
-  const second = months.smooth[0]
-    ? `${months.smooth[0]}월, 미뤄 둔 걸 꺼내기 좋은 달`
-    : months.shaky[0]
-      ? `${months.shaky[0]}월, 한 박자 쉬어 갈 달`
-      : '다음 생일까지 꼭 알아 둘 것';
+  const second = calendar.length > 1 ? `달마다 공략: ${calendar[0]!.month}월부터 ${calendar.at(-1)!.month}월까지` : '다음 생일까지 꼭 알아 둘 것';
   return [first[type], second, `${nextBirthday.month}월 ${nextBirthday.day}일 생일부터 1년의 흐름`, '미래의 내가 꼭 부탁하고 싶은 한 가지'];
 }
 
@@ -99,6 +101,7 @@ export function createFirstPageContext(req: FirstLetterRequest, checkin: Checkin
   const current = reading(dayMaster, mbti, from, next);
   const span = spanWord(from, next);
   const months = keyMonths(dayBranch, from, next);
+  const calendar = monthlyGuide(dayMaster, dayBranch, mbti, from, next);
   const type = letterType(current.combination as Parameters<typeof letterType>[0], checkin);
 
   const sajuVsMbti = compareWithMbti(sajuAxisScores(chart), mbti)
@@ -120,7 +123,9 @@ export function createFirstPageContext(req: FirstLetterRequest, checkin: Checkin
     next: reading(dayMaster, mbti, next, following),
     months,
     ipchunInPeriod: ipchunBetween(from, next),
-    toc: tocFor(type, span, months, next),
+    calendar,
+    keyMonth: keyMonthOf(calendar, type === '이번엔 잡아'),
+    toc: tocFor(type, span, calendar, next),
     actions: pickBySeed(THEME_ACTIONS[current.theme], seed, 2),
   };
   const greeting = req.name?.trim() ? `${vocative(req.name.trim())}, 생일 축하해. 다음 생일의 나야.` : '생일 축하해. 다음 생일의 나야.';
@@ -137,7 +142,7 @@ export const FIRST_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편지�
 2. nature — 타고난 나: 주어진 일간의 결로 "사주로 보면 너는 ~래" 하고 말하고, MBTI 성향과 겹쳐 "근데 속은 ~한 편이지?"처럼 묻는다. 1문단.
 3. present — 지금의 나: 체크인 답으로 "요즘 ~지?" 하고 짚는다. 다섯 개를 다 늘어놓지 말고, "요즘 내 시간"과 "힘들 때 나는"을 성향(MBTI)과 겹쳐 하나의 알아봐 주는 말로 만든다 (예: 혼자 충전하는 성향인데 요즘 시간이 여러 사람들 속이면 "사람들 속에 있는 시간이 많아서 더 빨리 닳지?"). "가까운 사람"이 누구인지(가족·연인·친구) 짐작해서 쓰지 않는다. 본인이 고른 답이라 단정해도 된다. now 에서 한 말을 되풀이하지 않는다. 체크인에 없는 마음(예: 바라는 것이 "뭔가 해내고 싶음"인데 "쉬고 싶은 마음")을 덧붙이지 않는다. 1문단.
 4. ahead — 이 기간 예고: 이 기간의 흐름을 "사주로 보면 이 ○○은 ~한 때래"처럼 쉬운 말로 한 번 말하고, 이 사람의 성향에 그 흐름이 어땠는지(버거운 쪽·편한 쪽)를 미래의 나의 마음으로 말한다 ("그게 나한테는 좀 버거웠어", "순서가 자꾸 흔들려서 불안했어"). 편지 유형에 맞는 세기로. 구체적인 사건이나 생활 장면(설거지, 빨래, 택배, 커피, 산책, 휴대폰 같은 것)은 지어내지 않는다. 추상어·비유도 쓰지 않는다: "안을 들여다보는 시간" 대신 "혼자 생각할 일이 많아지는 때"처럼 한 번 읽고 알아듣는 말로. 주어진 설명 문구를 그대로 옮기지 않는다. 1~2문단.
-5. cut — 끊기: 봉투 목차 첫 줄의 핵심을 말하기 바로 직전에서, 문장 중간에 멈춘다. 마침표·물음표·느낌표로 끝내지 않는다. 무엇에 관한 얘기인지(주제)는 드러나야 한다. "그걸", "이거"로 가리키기만 하고 내용이 없는 끊기는 안 된다. 예: "그래서 하나만 미리 말해 줄게. 나 이거 하나 때문에 이 넉 달을 거의 날렸거든. 너는 꼭" (그대로 베끼지 말고 이 사람에 맞게)
+5. cut — 끊기: 주어진 "끊기는 달"이 어떤 달인지(제일 조심할 달 / 놓치면 아까운 달)를 예고하고, 그 달 이름을 말하기 바로 직전에서 문장 중간에 멈춘다. 달 이름은 절대 쓰지 않는다 (두 번째 장 첫 줄이 그 달 이름으로 시작한다). 마침표·물음표·느낌표로 끝내지 않는다. 예: "이 넉 달 중에 진짜 조심할 달이 하나 있어. 나 그 달에 제일 크게 흔들렸거든. 그게 언제냐면" (그대로 베끼지 말고 이 사람에 맞게)
 
 # 단정 규칙 (가장 중요)
 - 단정해도 되는 것: 본인이 알려 준 체크인 답과 MBTI. ("요즘 할 일은 쌓여 있는데 지쳐 있지?")
@@ -151,7 +156,7 @@ export const FIRST_PAGE_SYSTEM = `너는 "나이테"라는 서비스의 편지�
 - 이직·투자·연애·결혼 결정 지시, 건강 예언과 몸 상태("앓았어"), 단정적 예언, "반드시", "무조건".
 - 직업·학업·가족을 짐작하게 하는 말: 회의, 회사, 출근, 퇴근, 학교, 시험, 과제, 엄마, 아빠, 애인, 남편, 아내 등.
 - 생일은 늘 "다음 생일"이라고 쓴다 ("이번 생일" 금지).
-- "그래서 너는 이렇게 해" 같은 행동은 주어진 "내가 해 보고 효과 있었던 것"에서 고른다. "힘들 때 나는"에 맞춰 이 사람이 실제로 할 만한 방식으로 말한다 (혼자 삭이는 사람에게 "털어놔"만 하지 않는다). 할 일을 적기·지우기·줄이기, 휴대폰 내려놓기 같은 흔한 정리 조언은 쓰지 않는다.
+- 무엇을 하라는 구체적인 행동과 달 이름은 두 번째 장 몫이다. 첫 장에서는 하지 않는다. 할 일을 적기·지우기·줄이기, 휴대폰 내려놓기 같은 흔한 정리 조언도 쓰지 않는다.
 - AI 말버릇: 표어 같은 문장, "그게 전부야", "A가 아니었어. 그건 B였어" 같은 반전 틀, 같은 말 되풀이, 셋씩 짝 맞춘 나열, 비유·추상어 잇기, "너라서", "오롯이", "차곡차곡", "한 걸음씩", "선물 같", "숨 돌릴 틈", "마음 한쪽", "쉼표", "~했을 거야".
 - "따끔하게 말할게"처럼 하려는 말을 미리 예고하지 않는다. "겁먹지 마", "나는 지나왔으니까" 같은 흔한 위로로 마무리하지 않는다.
 - 실제 사람의 입말로 쓴다. 한 번 읽고 이해되는 쉬운 말. 문장은 짧게. 이 지시에 나온 예시 문장을 그대로 가져다 쓰지 않는다.
@@ -185,8 +190,9 @@ export function firstPagePrompt(ctx: FirstPageContext, problems: string[] = []):
     `# 지금부터 다음 생일까지 (ahead 에서 미래의 내 경험으로)`,
     describe(ctx.current),
     '',
-    '# 내가 해 보고 효과 있었던 것 (cut 에서 핵심 직전에 멈출 때, 이 중 하나를 향해 간다. 첫 장에서는 다 말하지 않는다)',
-    ...ctx.actions.map((x) => `- ${x}`),
+    '# 달마다의 흐름 (첫 장에서는 달 이름 없이 "처음엔 ~하다가 중간에 ~" 정도로만. 자세한 건 두 번째 장 몫)',
+    `- ${ctx.calendar.map((m) => m.verdict).join(' → ')}`,
+    ctx.keyMonth ? `- 끊기는 달: ${ctx.type === '이번엔 잡아' ? '놓치면 아까운 달' : '제일 조심할 달'} (${ctx.keyMonth.verdict}). 이 달 이름은 첫 장에 쓰지 않는다` : '',
     '',
     '# 봉투 목차 (두 번째 장에 이 순서로 쓸 내용. cut 은 첫 줄의 핵심을 말하기 직전에서 멈춘다)',
     ...ctx.toc.map((t, i) => `${i + 1}. ${t}`),
@@ -214,7 +220,7 @@ export interface FirstPage {
 }
 
 /** AI 말버릇 (지인 테스트에서 지적된 것) */
-const AI_TICS: readonly [RegExp, string][] = [
+export const AI_TICS: readonly [RegExp, string][] = [
   [/그게 전부|이게 전부|그게 다야/, '"그게 전부야" 같은 마무리'],
   [/아니(었)?어\.\s*(그건|그게)/, '"A가 아니었어. 그건 B" 반전 틀'],
   [/따끔하게 (말|한마디)/, '"따끔하게 말할게"처럼 하려는 말을 미리 예고하기'],

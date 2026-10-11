@@ -15,7 +15,7 @@ import type { FirstLetter } from './compose.ts';
 import { ruleViolations } from './rules.ts';
 
 /** 세운 기운별 그 시기의 상황 (CLAUDE.md 5-2 표) */
-const THEME_SITUATION: Readonly<Record<TenGodGroup, string>> = {
+export const THEME_SITUATION: Readonly<Record<TenGodGroup, string>> = {
   비겁: '사람이 몰리고 경쟁하는 시기. 내 힘으로 버티고 내 몫을 지켜야 하는 시간',
   식상: '표현하고 만들어내는 시기. 말과 결과물이 늘고, 기존 틀에서 벗어나고 싶어지는 시간',
   재성: '현실과 성과를 챙기는 시기. 돈, 일의 결과, 관리할 것이 많아지는 시간',
@@ -24,7 +24,7 @@ const THEME_SITUATION: Readonly<Record<TenGodGroup, string>> = {
 };
 
 /** 테마별 축 글자의 마음 (CLAUDE.md 5-2 표의 편했을 쪽 / 버거웠을 쪽) */
-const SIDE_FEELING: Readonly<Record<TenGodGroup, Readonly<Record<string, string>>>> = {
+export const SIDE_FEELING: Readonly<Record<TenGodGroup, Readonly<Record<string, string>>>> = {
   비겁: { E: '사람 속에서 힘을 얻음', I: '사람에 치여 혼자 있을 시간이 모자람', T: '경쟁을 경쟁으로 받아들임', F: '내 몫을 챙기다 관계가 상할까 마음 씀' },
   식상: { E: '드러내는 게 신남', I: '계속 보여줘야 해서 지침', P: '틀 밖이 자연스러움', J: '정해진 게 흔들려 불안함' },
   재성: { S: '구체적인 숫자와 결과가 편함', N: '의미보다 숫자를 좇느라 공허함', J: '계획하고 관리하는 게 맞음', P: '챙길 게 많아 숨 막힘' },

@@ -24,7 +24,8 @@ describe('편지 유형 판정 (손편지 예시와 같은 결과)', () => {
     const r = ctxOf(JIN, JIN_CHECK);
     expect(r.context.type).toBe('이것만은 지켜');
     expect(r.context.span).toBe('넉 달');
-    expect(r.context.toc).toEqual(['이 넉 달 동안 딱 하나 조심할 것', '11월, 미뤄 둔 걸 꺼내기 좋은 달', '2월 23일 생일부터 1년의 흐름', '미래의 내가 꼭 부탁하고 싶은 한 가지']);
+    expect(r.context.toc).toEqual(['이 넉 달 중 제일 조심할 달과 버티는 법', '달마다 공략: 10월부터 2월까지', '2월 23일 생일부터 1년의 흐름', '미래의 내가 꼭 부탁하고 싶은 한 가지']);
+    expect(r.context.keyMonth!.month).toBe(1);
     expect(r.context.sajuVsMbti.join(' ')).toContain('E/I: 사주로 보면 뚜렷하게 E 쪽인데, 실제는 I');
     expect(r.context.ipchunInPeriod).toBe(true);
     expect(r.greeting).toBe('진영아, 생일 축하해. 다음 생일의 나야.');
@@ -33,7 +34,8 @@ describe('편지 유형 판정 (손편지 예시와 같은 결과)', () => {
     const r = ctxOf(WIFE, WIFE_CHECK);
     expect(r.context.type).toBe('방향을 고를 때');
     expect(r.context.span).toBe('여섯 달');
-    expect(r.context.toc[1]).toBe('10월, 미뤄 둔 걸 꺼내기 좋은 달');
+    expect(r.context.months.smooth).toEqual([10]);
+    expect(r.context.calendar.find((m) => m.month === 10)!.relation).toBe('합');
     expect(r.context.nature.image).toBe('씨앗을 품어 기르는 밭');
     expect(r.greeting).toBe('생일 축하해. 다음 생일의 나야.');
   });

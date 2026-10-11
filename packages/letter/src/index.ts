@@ -9,3 +9,5 @@ export * from './checkin.ts';
 export * from './first-page-ai.ts';
 export * from './eval.ts';
 export * from './scenes.ts';
+export * from './monthly.ts';
+export * from './calendar-page.ts';
