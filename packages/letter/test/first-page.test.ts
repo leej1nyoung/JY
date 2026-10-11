@@ -81,6 +81,13 @@ describe('첫 장 결과 검사', () => {
     const p = checkFirstPage(bad, ctx).problems.join(' ');
     for (const w of ['반전 틀', '유형 이름', '달 이름', '~을 거야']) expect(p).toContain(w);
   });
+  it('입춘이 든 기간은 ahead 의 "2월 초"만 허용, 예고·흔한 위로는 잡는다', () => {
+    expect(ctx.ipchunInPeriod).toBe(true);
+    expect(checkFirstPage({ ...GOOD, ahead: GOOD.ahead + ' 2월 초쯤 공기가 좀 달라졌어.' }, ctx).problems).toEqual([]);
+    expect(checkFirstPage({ ...GOOD, ahead: GOOD.ahead + ' 2월 중순엔 좀 나았어.' }, ctx).problems.join(' ')).toContain('달 이름');
+    const p = checkFirstPage({ ...GOOD, ahead: '따끔하게 말할게. ' + GOOD.ahead + ' 겁먹지 마.' }, ctx).problems.join(' ');
+    for (const w of ['예고', '흔한 위로']) expect(p).toContain(w);
+  });
 });
 
 describe('자동 검사용 가상 인물', () => {
