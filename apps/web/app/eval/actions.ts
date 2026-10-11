@@ -9,8 +9,9 @@ import { jsonCall } from '@/lib/claude';
 import { generateFirstPage } from '@/lib/first-page-ai';
 import { keyMatches } from '@/lib/stats-key';
 
-const EVAL_SIZE = 40;
-const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL?.trim() || 'claude-opus-5-5';
+// 비용을 줄이려고 12명(유형마다 3명). 채점은 Sonnet, 짧게 생각.
+const EVAL_SIZE = 12;
+const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL?.trim() || 'claude-sonnet-5-5';
 
 export async function runEvalCase(key: string, index: number, createdAtIso: string): Promise<EvalResult | { error: string }> {
   if (!keyMatches(key)) return { error: '키가 맞지 않아요.' };
@@ -48,8 +49,8 @@ export async function runEvalCase(key: string, index: number, createdAtIso: stri
     options.splice(answer - 1, 0, summary);
 
     const [who, quality] = await Promise.all([
-      jsonCall({ model: JUDGE_MODEL, effort: 'medium', system: WHO_SYSTEM, user: whoPrompt(letter, options), schema: WHO_SCHEMA }),
-      jsonCall({ model: JUDGE_MODEL, effort: 'medium', system: QUALITY_SYSTEM, user: qualityPrompt(letter, ctx), schema: QUALITY_SCHEMA }),
+      jsonCall({ model: JUDGE_MODEL, effort: 'low', system: WHO_SYSTEM, user: whoPrompt(letter, options), schema: WHO_SCHEMA }),
+      jsonCall({ model: JUDGE_MODEL, effort: 'low', system: QUALITY_SYSTEM, user: qualityPrompt(letter, ctx), schema: QUALITY_SCHEMA }),
     ]);
     const w = (who.json ?? {}) as { pick?: number; reason?: string };
     const q = quality.json as EvalResult['quality'];

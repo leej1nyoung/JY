@@ -24,7 +24,7 @@ export default async function EvalPage({ searchParams }: { searchParams: Promise
       <Logo />
       <h1 className="form-title">첫 장 자동 검사</h1>
       <p className="form-lead">
-        가상의 사람 40명에게 새 구조의 첫 장을 AI로 쓰고, 다른 AI가 채점해요. 첫 장 모델: {FIRST_PAGE_MODEL}. 한 번 돌리는 데 대략 5천~1만 원(추정), 10분 안팎 걸려요.
+        가상의 사람 12명(유형마다 3명)에게 새 구조의 첫 장을 AI로 쓰고, 다른 AI가 채점해요. 첫 장 모델: {FIRST_PAGE_MODEL}. 한 번 돌리는 데 대략 1~2천 원(추정), 5분 안팎 걸려요.
         창을 닫아도 결과는 이 브라우저에 남고, 다시 열면 이어서 해요.
       </p>
       <EvalRunner secret={key!} />

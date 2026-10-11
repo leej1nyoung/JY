@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { summarize, type EvalResult } from '@naite/letter/eval-report';
 import { runEvalCase } from './actions';
 
-const SIZE = 40;
+const SIZE = 12;
 const CONCURRENCY = 4;
-const STORE = 'naite:eval';
+const STORE = 'naite:eval:12';
 
 interface Run {
   createdAt: string;
@@ -83,7 +83,7 @@ export function EvalRunner({ secret }: { secret: string }) {
     <section>
       <div className="eval-actions">
         <button className="btn" type="button" disabled={busy} onClick={() => go(!run)}>
-          {busy ? `검사 중… ${results.length}/${SIZE}` : run ? '이어서 하기 (빠진 번호·실패한 번호만)' : '40통 검사 시작'}
+          {busy ? `검사 중… ${results.length}/${SIZE}` : run ? '이어서 하기 (빠진 번호·실패한 번호만)' : `${SIZE}통 검사 시작`}
         </button>
         {run && !busy && (
           <button className="btn btn-soft" type="button" onClick={() => go(true)}>
