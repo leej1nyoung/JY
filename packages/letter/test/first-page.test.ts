@@ -10,8 +10,8 @@ const JIN: FirstLetterRequest = {
 };
 const WIFE: FirstLetterRequest = { ...JIN, year: 1997, month: 4, day: 7, time: { hour: 11, minute: 59 }, birthplaceCode: '11350', mbti: 'ISFJ', name: null };
 const AT = new Date('2026-10-11T03:00:00Z'); // 한국 10월 11일 일요일 낮
-const JIN_CHECK: Checkin = { focus: '해야 할 일', mood: '지쳐 있음', wish: '사람과 가까워지고 싶음', coping: '혼자 삭인다', time: '사람들 속에서' };
-const WIFE_CHECK: Checkin = { focus: '앞으로의 방향', mood: '복잡함', wish: '쉬고 싶음', coping: '일단 자거나 쉰다', time: '집에서 조용히' };
+const JIN_CHECK: Checkin = { focus: '해야 할 일', mood: '지쳐 있음', wish: '사람과 가까워지고 싶음', coping: '좋아하는 걸 하며 푼다', time: '가까운 사람 한두 명과' };
+const WIFE_CHECK: Checkin = { focus: '앞으로의 방향', mood: '복잡함', wish: '쉬고 싶음', coping: '일단 잔다', time: '대부분 혼자' };
 
 function ctxOf(req: FirstLetterRequest, c: Checkin) {
   const r = createFirstPageContext(req, c, AT);

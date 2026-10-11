@@ -4,8 +4,8 @@ import type { Combination } from '@naite/saju';
 export const CHECKIN_FOCUS = ['사람 관계', '해야 할 일', '나 자신', '앞으로의 방향'] as const;
 export const CHECKIN_MOOD = ['지쳐 있음', '무난함', '들떠 있음', '복잡함'] as const;
 export const CHECKIN_WISH = ['쉬고 싶음', '뭔가 해내고 싶음', '사람과 가까워지고 싶음', '정리하고 싶음'] as const;
-export const CHECKIN_COPING = ['혼자 삭인다', '누군가에게 털어놓는다', '몸을 움직인다', '일단 자거나 쉰다'] as const;
-export const CHECKIN_TIME = ['대부분 혼자', '사람들 속에서', '이리저리 바쁘게', '집에서 조용히'] as const;
+export const CHECKIN_COPING = ['혼자 삭인다', '누군가에게 털어놓는다', '몸을 움직인다', '좋아하는 걸 하며 푼다', '일단 잔다'] as const;
+export const CHECKIN_TIME = ['대부분 혼자', '가까운 사람 한두 명과', '여러 사람들 속에서', '이리저리 바쁘게'] as const;
 
 export interface Checkin {
   /** 요즘 가장 마음 쓰이는 것 */
