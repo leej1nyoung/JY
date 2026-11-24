@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" width="1200" height="1000" font-family="'Gowun Batang','Apple SD Gothic Neo','Noto Sans KR',sans-serif">
+  <defs>
+    <radialGradient id="bread" cx="40%" cy="35%" r="75%">
+      <stop offset="0" stop-color="#F6C46A"/>
+      <stop offset="0.6" stop-color="#DE9A3E"/>
+      <stop offset="1" stop-color="#B06A22"/>
+    </radialGradient>
+    <linearGradient id="pinkShell" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FAD0DC"/>
+      <stop offset="1" stop-color="#E996AE"/>
+    </linearGradient>
+    <radialGradient id="truffle" cx="38%" cy="32%" r="75%">
+      <stop offset="0" stop-color="#7A4A2E"/>
+      <stop offset="0.65" stop-color="#4A2A18"/>
+      <stop offset="1" stop-color="#2A160C"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF1B0"/>
+      <stop offset="0.5" stop-color="#E2B84A"/>
+      <stop offset="1" stop-color="#B8892A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="1000" fill="#FFF6F7"/>
+  <text x="600" y="62" text-anchor="middle" font-size="34" font-weight="700" fill="#3E2A47">「붕어빵의 정체」 주연 캐릭터 시트</text>
+  <text x="600" y="98" text-anchor="middle" font-size="18" fill="#6B5774">몸은 사람, 머리는 음식 · 픽사풍 3D 기준 설정도</text>
+
+  <!-- panels -->
+  <rect x="24" y="125" width="368" height="700" rx="28" fill="#FFF0DA"/>
+  <rect x="416" y="125" width="368" height="700" rx="28" fill="#FCE3EB"/>
+  <rect x="808" y="125" width="368" height="700" rx="28" fill="#EDE4F8"/>
+
+  <!-- ============ 1. 붕어빵 ============ -->
+  <g transform="translate(208,0)">
+    <ellipse cx="0" cy="808" rx="110" ry="14" fill="#000" opacity="0.08"/>
+    <!-- legs (jeans) -->
+    <rect x="-52" y="628" width="46" height="172" rx="16" fill="#4A6FA5"/>
+    <rect x="6" y="628" width="46" height="172" rx="16" fill="#4A6FA5"/>
+    <path d="M-40 700 l12 6 M30 690 l-10 8" stroke="#3B5A88" stroke-width="3" stroke-linecap="round"/>
+    <!-- sneakers -->
+    <ellipse cx="-32" cy="804" rx="36" ry="14" fill="#FFFFFF" stroke="#D9D2D6" stroke-width="2"/>
+    <ellipse cx="32" cy="804" rx="36" ry="14" fill="#FFFFFF" stroke="#D9D2D6" stroke-width="2"/>
+    <!-- arms -->
+    <path d="M-72 455 Q-108 530 -98 612" stroke="#9AA0A6" stroke-width="36" fill="none" stroke-linecap="round"/>
+    <path d="M72 455 Q108 530 98 612" stroke="#9AA0A6" stroke-width="36" fill="none" stroke-linecap="round"/>
+    <circle cx="-98" cy="622" r="17" fill="#F2C9A0"/>
+    <circle cx="98" cy="622" r="17" fill="#F2C9A0"/>
+    <!-- hoodie torso -->
+    <path d="M-78 445 Q-88 540 -72 640 L72 640 Q88 540 78 445 Q0 425 -78 445 Z" fill="#A3A9AF"/>
+    <path d="M-48 565 L48 565 L58 615 L-58 615 Z" fill="#8E949A"/>
+    <path d="M-62 446 Q0 488 62 446 Q0 430 -62 446 Z" fill="#7F858B"/>
+    <path d="M-14 458 L-18 515 M14 458 L18 515" stroke="#E8E8E8" stroke-width="4" stroke-linecap="round"/>
+    <!-- neck -->
+    <rect x="-17" y="400" width="34" height="46" rx="8" fill="#F2C9A0"/>
+    <!-- fish head -->
+    <path d="M100 300 L172 248 Q158 318 174 392 L100 342 Z" fill="url(#bread)" stroke="#A8661F" stroke-width="3"/>
+    <path d="M120 300 L160 270 M120 320 L162 320 M120 340 L160 368" stroke="#A8661F" stroke-width="3" stroke-linecap="round"/>
+    <path d="M-52 240 Q0 190 52 240 Z" fill="#D18B35" stroke="#A8661F" stroke-width="3"/>
+    <ellipse cx="0" cy="322" rx="122" ry="96" fill="url(#bread)" stroke="#A8661F" stroke-width="3"/>
+    <!-- scales -->
+    <g stroke="#B5732A" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8">
+      <path d="M30 368 q12 14 24 0 M58 368 q12 14 24 0 M44 388 q12 14 24 0"/>
+      <path d="M-80 372 q12 14 24 0 M-52 386 q12 14 24 0"/>
+      <path d="M72 262 q12 14 24 0 M84 290 q10 12 20 0"/>
+    </g>
+    <!-- crispy edge highlights -->
+    <path d="M-100 290 Q-90 255 -55 238" stroke="#FCE3A8" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.8"/>
+    <!-- eyes -->
+    <ellipse cx="-40" cy="312" rx="24" ry="28" fill="#fff" stroke="#6B3D12" stroke-width="2"/>
+    <ellipse cx="22" cy="312" rx="24" ry="28" fill="#fff" stroke="#6B3D12" stroke-width="2"/>
+    <circle cx="-36" cy="318" r="12" fill="#3A2412"/>
+    <circle cx="26" cy="318" r="12" fill="#3A2412"/>
+    <circle cx="-32" cy="313" r="4" fill="#fff"/>
+    <circle cx="30" cy="313" r="4" fill="#fff"/>
+    <!-- soft, slightly sad brows -->
+    <path d="M-62 276 Q-42 270 -22 280" stroke="#6B3D12" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M2 280 Q22 270 42 276" stroke="#6B3D12" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- blush + shy smile -->
+    <ellipse cx="-70" cy="352" rx="14" ry="7" fill="#F08A7A" opacity="0.45"/>
+    <ellipse cx="52" cy="352" rx="14" ry="7" fill="#F08A7A" opacity="0.45"/>
+    <path d="M-20 362 Q-8 372 6 362" stroke="#6B3D12" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- ============ 2. 마카롱 ============ -->
+  <g transform="translate(600,0)">
+    <ellipse cx="0" cy="808" rx="100" ry="14" fill="#000" opacity="0.08"/>
+    <!-- legs -->
+    <rect x="-40" y="690" width="30" height="110" rx="12" fill="#F2D2B8"/>
+    <rect x="10" y="690" width="30" height="110" rx="12" fill="#F2D2B8"/>
+    <ellipse cx="-26" cy="804" rx="28" ry="11" fill="#F4B9CA"/>
+    <ellipse cx="26" cy="804" rx="28" ry="11" fill="#F4B9CA"/>
+    <!-- arms -->
+    <path d="M-66 455 Q-96 530 -88 600" stroke="#FFFDF8" stroke-width="30" fill="none" stroke-linecap="round"/>
+    <path d="M66 455 Q96 530 88 600" stroke="#FFFDF8" stroke-width="30" fill="none" stroke-linecap="round"/>
+    <path d="M-66 455 Q-96 530 -88 600" stroke="#EADFD3" stroke-width="2" fill="none"/>
+    <circle cx="-88" cy="610" r="15" fill="#F2D2B8"/>
+    <circle cx="88" cy="610" r="15" fill="#F2D2B8"/>
+    <!-- blouse -->
+    <path d="M-70 445 Q-78 520 -66 605 L66 605 Q78 520 70 445 Q0 428 -70 445 Z" fill="#FFFDF8" stroke="#EADFD3" stroke-width="2"/>
+    <!-- skirt -->
+    <path d="M-68 598 L68 598 L98 705 L-98 705 Z" fill="#D9C8F0"/>
+    <path d="M-40 605 L-58 702 M0 605 L0 704 M40 605 L58 702" stroke="#C3AEE3" stroke-width="3"/>
+    <!-- bow -->
+    <path d="M0 458 L-30 440 L-30 476 Z M0 458 L30 440 L30 476 Z" fill="#F4B9CA" stroke="#E08FA8" stroke-width="2"/>
+    <circle cx="0" cy="458" r="8" fill="#E996AE"/>
+    <!-- neck -->
+    <rect x="-14" y="405" width="28" height="40" rx="7" fill="#F2D2B8"/>
+    <!-- macaron head: bottom shell -->
+    <path d="M-110 380 Q-112 425 -60 432 L60 432 Q112 425 110 380 Z" fill="url(#pinkShell)" stroke="#D97C98" stroke-width="3"/>
+    <!-- bottom feet ruffle -->
+    <path d="M-112 380 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0 q8 -8 16 0" stroke="#E08FA8" stroke-width="4" fill="none"/>
+    <!-- cream -->
+    <rect x="-112" y="340" width="224" height="38" rx="18" fill="#FFF4E6" stroke="#EAD7BE" stroke-width="2"/>
+    <!-- top shell -->
+    <path d="M-118 340 Q-118 210 0 205 Q118 210 118 340 Z" fill="url(#pinkShell)" stroke="#D97C98" stroke-width="3"/>
+    <path d="M-118 340 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0 q8 8 16 0" stroke="#E08FA8" stroke-width="4" fill="none"/>
+    <ellipse cx="-50" cy="238" rx="38" ry="12" fill="#fff" opacity="0.45" transform="rotate(-12 -50 238)"/>
+    <!-- eyes with lashes -->
+    <ellipse cx="-36" cy="290" rx="21" ry="26" fill="#fff" stroke="#8A3E58" stroke-width="2"/>
+    <ellipse cx="36" cy="290" rx="21" ry="26" fill="#fff" stroke="#8A3E58" stroke-width="2"/>
+    <circle cx="-34" cy="296" r="12" fill="#4A2A3A"/>
+    <circle cx="38" cy="296" r="12" fill="#4A2A3A"/>
+    <circle cx="-30" cy="291" r="4" fill="#fff"/>
+    <circle cx="42" cy="291" r="4" fill="#fff"/>
+    <path d="M-58 272 l-10 -8 M-50 266 l-6 -10 M58 272 l10 -8 M50 266 l6 -10" stroke="#4A2A3A" stroke-width="3" stroke-linecap="round"/>
+    <!-- blush + small smile on cream -->
+    <ellipse cx="-72" cy="322" rx="14" ry="7" fill="#E8708F" opacity="0.4"/>
+    <ellipse cx="72" cy="322" rx="14" ry="7" fill="#E8708F" opacity="0.4"/>
+    <path d="M-12 352 Q0 366 12 352" stroke="#8A3E58" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- tiny crack hint (weakness) -->
+    <path d="M78 232 l-8 14 l6 6 l-6 12" stroke="#C76A88" stroke-width="2" fill="none" opacity="0.7"/>
+  </g>
+
+  <!-- ============ 3. 트러플 엄마 ============ -->
+  <g transform="translate(992,0)">
+    <ellipse cx="0" cy="808" rx="100" ry="14" fill="#000" opacity="0.08"/>
+    <!-- legs -->
+    <rect x="-38" y="712" width="28" height="86" rx="10" fill="#EBC9A8"/>
+    <rect x="10" y="712" width="28" height="86" rx="10" fill="#EBC9A8"/>
+    <path d="M-48 806 L-10 806 L-12 792 L-44 796 Z M10 806 L48 806 L44 796 L12 792 Z" fill="#1E1418"/>
+    <!-- skirt -->
+    <path d="M-70 625 L70 625 L76 722 L-76 722 Z" fill="#2A2026"/>
+    <!-- arms -->
+    <path d="M-74 455 Q-106 530 -96 606" stroke="#7B2D3A" stroke-width="34" fill="none" stroke-linecap="round"/>
+    <path d="M74 455 Q106 530 96 606" stroke="#7B2D3A" stroke-width="34" fill="none" stroke-linecap="round"/>
+    <circle cx="-96" cy="616" r="16" fill="#EBC9A8"/>
+    <circle cx="96" cy="616" r="16" fill="#EBC9A8"/>
+    <!-- gold handbag -->
+    <path d="M86 612 Q100 590 114 612" stroke="#B8892A" stroke-width="4" fill="none"/>
+    <rect x="76" y="612" width="50" height="40" rx="8" fill="url(#gold)" stroke="#9C7420" stroke-width="2"/>
+    <!-- tweed jacket -->
+    <path d="M-76 445 Q-86 540 -70 632 L70 632 Q86 540 76 445 Q0 425 -76 445 Z" fill="#7B2D3A"/>
+    <g fill="#A8505E" opacity="0.6">
+      <circle cx="-50" cy="500" r="3"/><circle cx="-30" cy="540" r="3"/><circle cx="-55" cy="580" r="3"/>
+      <circle cx="45" cy="490" r="3"/><circle cx="55" cy="560" r="3"/><circle cx="30" cy="600" r="3"/>
+    </g>
+    <path d="M-40 446 L0 520 L40 446" stroke="#5E1F2A" stroke-width="5" fill="none"/>
+    <path d="M-76 446 L-76 632 M76 446 L76 632" stroke="url(#gold)" stroke-width="4"/>
+    <circle cx="0" cy="545" r="7" fill="url(#gold)"/>
+    <circle cx="0" cy="585" r="7" fill="url(#gold)"/>
+    <!-- neck + pearls -->
+    <rect x="-15" y="402" width="30" height="44" rx="7" fill="#EBC9A8"/>
+    <g fill="#FFFDF5" stroke="#D8CFC0" stroke-width="1.5">
+      <circle cx="-30" cy="452" r="7"/><circle cx="-18" cy="462" r="7"/><circle cx="-5" cy="467" r="7"/>
+      <circle cx="8" cy="467" r="7"/><circle cx="21" cy="462" r="7"/><circle cx="33" cy="452" r="7"/>
+    </g>
+    <!-- truffle head -->
+    <circle cx="0" cy="318" r="112" fill="url(#truffle)" stroke="#22120A" stroke-width="3"/>
+    <g fill="#8A5A3C" opacity="0.55">
+      <circle cx="-70" cy="270" r="3"/><circle cx="-40" cy="240" r="2.5"/><circle cx="60" cy="250" r="3"/>
+      <circle cx="80" cy="300" r="2.5"/><circle cx="-85" cy="330" r="3"/><circle cx="70" cy="370" r="3"/>
+      <circle cx="-50" cy="390" r="2.5"/><circle cx="20" cy="400" r="3"/><circle cx="-10" cy="225" r="2.5"/>
+    </g>
+    <!-- gold leaf -->
+    <path d="M-18 210 L6 198 L22 214 L10 228 L-10 224 Z" fill="url(#gold)"/>
+    <path d="M24 222 L36 216 L40 228 L30 232 Z" fill="url(#gold)"/>
+    <!-- haughty half-lidded eyes -->
+    <ellipse cx="-38" cy="312" rx="22" ry="20" fill="#fff"/>
+    <ellipse cx="38" cy="312" rx="22" ry="20" fill="#fff"/>
+    <circle cx="-34" cy="318" r="10" fill="#1E1010"/>
+    <circle cx="42" cy="318" r="10" fill="#1E1010"/>
+    <path d="M-62 312 Q-38 290 -14 312 L-14 296 L-62 296 Z" fill="#4A2A18"/>
+    <path d="M14 312 Q38 290 62 312 L62 296 L14 296 Z" fill="#4A2A18"/>
+    <path d="M-62 312 Q-38 300 -14 312 M14 312 Q38 300 62 312" stroke="#1E1010" stroke-width="3" fill="none"/>
+    <!-- arched brows (one raised) -->
+    <path d="M-64 274 Q-40 258 -14 270" stroke="#1E1010" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M14 262 Q40 240 64 258" stroke="#1E1010" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- gold glasses + chain -->
+    <circle cx="-38" cy="312" r="31" fill="none" stroke="url(#gold)" stroke-width="5"/>
+    <circle cx="38" cy="312" r="31" fill="none" stroke="url(#gold)" stroke-width="5"/>
+    <path d="M-7 308 Q0 300 7 308" stroke="url(#gold)" stroke-width="4" fill="none"/>
+    <path d="M-69 316 Q-92 380 -60 440" stroke="#E2B84A" stroke-width="2" fill="none" stroke-dasharray="3 3"/>
+    <!-- smirk + red lips -->
+    <path d="M-18 368 Q4 376 26 360" stroke="#B0253A" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- ============ labels ============ -->
+  <g font-size="17" fill="#4A3355">
+    <text x="208" y="860" text-anchor="middle" font-size="26" font-weight="700" fill="#3E2A47">🐟 붕어빵</text>
+    <text x="208" y="892" text-anchor="middle">포장마차 청년 · 사실 재벌 3세</text>
+    <text x="208" y="918" text-anchor="middle">순하고 말수 적음, 속은 슈크림</text>
+    <text x="208" y="950" text-anchor="middle" fill="#B06A22" font-weight="700">약점: 물 → 눅눅해짐</text>
+
+    <text x="600" y="860" text-anchor="middle" font-size="26" font-weight="700" fill="#3E2A47">🍬 마카롱</text>
+    <text x="600" y="892" text-anchor="middle">부잣집 외동딸 · 붕어빵 여자친구</text>
+    <text x="600" y="918" text-anchor="middle">다정하지만 엄마 앞에선 약함</text>
+    <text x="600" y="950" text-anchor="middle" fill="#C76A88" font-weight="700">약점: 습기·충격 → 금이 감</text>
+
+    <text x="992" y="860" text-anchor="middle" font-size="26" font-weight="700" fill="#3E2A47">🍫 트러플 엄마</text>
+    <text x="992" y="892" text-anchor="middle">재벌 사모님 · 금테 안경, 진주</text>
+    <text x="992" y="918" text-anchor="middle">도도함, 한쪽 눈썹만 올림</text>
+    <text x="992" y="950" text-anchor="middle" fill="#7B2D3A" font-weight="700">약점: 열 → 녹아내림</text>
+  </g>
+</svg>
