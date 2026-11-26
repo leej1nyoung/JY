@@ -1,6 +1,8 @@
 """사례 검색: 메일 → 스레드(사례) 단위로 묶어서 돌려준다."""
 import math
 
+from . import cases
+
 from .textutil import index_text, query_groups, snippet, stem, tokens
 
 
@@ -102,8 +104,15 @@ def search(conn, q, cfg, owner=None, date_from=None, date_to=None, limit=20, off
             experts[o] = experts.get(o, 0) + coverage ** 2 * (1.0 if i == 0 else 0.5)
     experts = [{"owner": k, "weight": round(v, 1)} for k, v in sorted(experts.items(), key=lambda x: -x[1])[:5]]
 
+    # 사례 요약: 질문 단어를 모두 담은 사례 (없으면 절반 이상 담은 사례) 기준
+    full = [tid for _s, tid, t in ranked if len(t["hit"]) == len(groups)]
+    half = [tid for _s, tid, t in ranked if len(t["hit"]) / max(1, len(groups)) >= 0.5]
+    basis = full or half
+    case_summary = cases.summary_for_threads(conn, basis[:500])
+    case_summary["basis"] = "모든 단어" if full else "단어 절반 이상"
+
     return {"terms": terms, "groups": groups, "cards": cards, "threads": threads,
-            "experts": experts, "total": total}
+            "experts": experts, "total": total, "case_summary": case_summary}
 
 
 def thread_summary(conn, tid, terms, best_row):
@@ -116,6 +125,7 @@ def thread_summary(conn, tid, terms, best_row):
     for r in conn.execute("SELECT attachments FROM messages WHERE thread_id=? AND hidden=0", (tid,)):
         atts.update(a for a in (r["attachments"] or "").split("\n") if a)
     card = conn.execute("SELECT id, title FROM cards WHERE thread_id=? LIMIT 1", (tid,)).fetchone()
+    case = conn.execute("SELECT * FROM cases WHERE thread_id=?", (tid,)).fetchone()
     return {
         "id": tid,
         "subject": t["subject"],
@@ -128,6 +138,7 @@ def thread_summary(conn, tid, terms, best_row):
         "best_message": best_row["id"] if best_row else None,
         "attachments": sorted(atts)[:12],
         "card": dict(card) if card else None,
+        "case": dict(case) if case else None,
     }
 
 
@@ -145,9 +156,11 @@ def get_thread(conn, tid):
             "attachments": [a for a in (m["attachments"] or "").split("\n") if a], "owners": owners,
         })
     cards = [dict(r) for r in conn.execute("SELECT * FROM cards WHERE thread_id=?", (tid,))]
+    case = conn.execute("SELECT * FROM cases WHERE thread_id=?", (tid,)).fetchone()
     return {"id": tid, "subject": t["subject"], "first_date": t["first_date"], "last_date": t["last_date"],
             "participants": [p for p in (t["participants"] or "").split("|") if p],
-            "owners": _owners_of_thread(conn, tid), "messages": msgs, "cards": cards}
+            "owners": _owners_of_thread(conn, tid), "messages": msgs, "cards": cards,
+            "case": dict(case) if case else None}
 
 
 # ------------------------------------------------------------------ 노하우 카드
@@ -203,6 +216,8 @@ def stats(conn):
         "messages": one("SELECT COUNT(*) FROM messages"),
         "threads": one("SELECT COUNT(*) FROM threads"),
         "cards": one("SELECT COUNT(*) FROM cards"),
+        "cases": one("SELECT COUNT(*) FROM cases"),
+        "cases_ai": one("SELECT COUNT(*) FROM cases WHERE method='AI'"),
         "owners": owners,
         "sources": [dict(r) for r in conn.execute("SELECT * FROM sources ORDER BY id DESC LIMIT 30")],
     }

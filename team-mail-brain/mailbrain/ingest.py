@@ -71,18 +71,18 @@ def _touch_thread(conn, tid, date, sender):
     )
 
 
-def ingest_path(conn, path, owner, cfg, since=None, log=print, progress=None):
+def ingest_path(conn, path, owner, cfg, since=None, log=print, progress=None, limit=None):
     """path(파일 또는 폴더)의 메일을 owner 의 메일함으로 적재한다."""
     totals = {"seen": 0, "added": 0, "merged": 0, "skipped": 0, "dup": 0, "files": 0}
     for fp in readers.iter_files(path):
-        r = ingest_file(conn, fp, owner, cfg, since, log, progress)
+        r = ingest_file(conn, fp, owner, cfg, since, log, progress, limit)
         totals["files"] += 1
         for k in ("seen", "added", "merged", "skipped", "dup"):
             totals[k] += r[k]
     return totals
 
 
-def ingest_file(conn, fp, owner, cfg, since=None, log=print, progress=None):
+def ingest_file(conn, fp, owner, cfg, since=None, log=print, progress=None, limit=None):
     started = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     src_id = conn.execute(
         "INSERT INTO sources(path, owner, started, status) VALUES (?,?,?,'running')", (fp, owner, started)
@@ -90,10 +90,14 @@ def ingest_file(conn, fp, owner, cfg, since=None, log=print, progress=None):
     conn.commit()
     c = {"seen": 0, "added": 0, "merged": 0, "skipped": 0, "dup": 0}
     since_s = since.strftime("%Y-%m-%d") if since else ""
+    touched = set()
     maxc = int(cfg.get("max_body_chars", 20000))
     log(f"[{owner}] 읽는 중: {fp}")
     try:
         for rec in readers.read_any(fp, log):
+            if limit and c["added"] >= limit:
+                log(f"  시험용 제한 {limit}통에 도달해 멈춤")
+                break
             c["seen"] += 1
             date = _kst(rec.get("date"))
             if _excluded(rec, cfg) or (since_s and date and date < since_s):
@@ -126,6 +130,7 @@ def ingest_file(conn, fp, owner, cfg, since=None, log=print, progress=None):
                      index_text(" ".join([sender, rec.get("to") or "", body_new, atts]))),
                 )
                 _touch_thread(conn, tid, date, sender)
+                touched.add(tid)
                 c["added"] += 1
             if c["seen"] % 500 == 0:
                 conn.commit()
@@ -140,6 +145,9 @@ def ingest_file(conn, fp, owner, cfg, since=None, log=print, progress=None):
     except Exception as e:  # 파일 하나가 망가져도 지금까지 읽은 건 남긴다
         status, err = "error", f"{type(e).__name__}: {e}"
         log(f"  ! 오류: {err}")
+    if touched:  # 새 메일이 들어간 스레드는 사례 DB도 바로 갱신 (규칙 추출, 빠름)
+        from . import cases
+        cases.build(conn, cfg, tids=sorted(touched), log=lambda *_: None)
     conn.execute(
         "UPDATE sources SET finished=?, seen=?, added=?, merged=?, skipped=?, status=?, error=? WHERE id=?",
         (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), c["seen"], c["added"], c["merged"], c["skipped"],
@@ -168,6 +176,7 @@ def remove_owner(conn, owner):
             if row:
                 conn.execute("UPDATE threads SET msg_count=msg_count-1 WHERE id=?", (row[0],))
             removed += 1
+    conn.execute("DELETE FROM cases WHERE thread_id IN (SELECT id FROM threads WHERE msg_count<=0)")
     conn.execute("DELETE FROM threads WHERE msg_count<=0")
     conn.commit()
     return removed

@@ -64,36 +64,52 @@ def build_context(conn, result, max_threads=6, max_msgs=3, max_chars=1500):
     return "\n\n".join(parts)
 
 
-def ask(conn, cfg, question, result):
+def chat(cfg, msgs, json_mode=False):
+    """사내 LLM 한 번 호출 → 답 문자열."""
     lc = cfg.get("llm") or {}
     if not lc.get("enabled"):
-        raise LLMError("LLM이 꺼져 있습니다 (data/config.json 의 llm.enabled)")
+        raise LLMError("사내 AI가 꺼져 있습니다 (data/config.json 의 llm.enabled)")
     url = lc["url"].rstrip("/")
     if not lc.get("allow_external") and not _is_internal(url):
-        raise LLMError("보안: 사내망/로컬이 아닌 LLM 주소로는 메일을 보내지 않습니다.")
-    context = build_context(conn, result)
-    if not context:
-        return "관련 사례를 찾지 못했습니다."
-    msgs = [{"role": "system", "content": SYSTEM},
-            {"role": "user", "content": f"[사례]\n{context}\n\n[질문]\n{question}"}]
-    if lc.get("kind") == "openai":
-        endpoint = url + ("/chat/completions" if url.endswith("/v1") else "/v1/chat/completions")
-        payload = {"model": lc["model"], "messages": msgs, "temperature": 0.2}
-    else:
-        endpoint = url + "/api/chat"
-        payload = {"model": lc["model"], "messages": msgs, "stream": False, "options": {"temperature": 0.2}}
+        raise LLMError("보안: 사내망/로컬이 아닌 AI 주소로는 메일을 보내지 않습니다. "
+                       "회사가 승인한 주소라면 llm.allow_external 을 true 로 바꾸세요.")
     headers = {"Content-Type": "application/json"}
     key = os.environ.get(lc.get("api_key_env") or "", "")
-    if key:
+    kind = lc.get("kind", "ollama")
+    if kind == "azure":
+        endpoint = (f"{url}/openai/deployments/{lc['model']}/chat/completions"
+                    f"?api-version={lc.get('api_version', '2024-10-21')}")
+        payload = {"messages": msgs, "temperature": 0}
+        if key:
+            headers["api-key"] = key
+    elif kind == "openai":
+        endpoint = url + ("/chat/completions" if url.endswith("/v1") else "/v1/chat/completions")
+        payload = {"model": lc["model"], "messages": msgs, "temperature": 0}
+    else:
+        endpoint = url + "/api/chat"
+        payload = {"model": lc["model"], "messages": msgs, "stream": False, "options": {"temperature": 0}}
+        if json_mode:
+            payload["format"] = "json"
+    if json_mode and kind in ("openai", "azure"):
+        payload["response_format"] = {"type": "json_object"}
+    if key and kind != "azure":
         headers["Authorization"] = "Bearer " + key
     req = urllib.request.Request(endpoint, json.dumps(payload).encode("utf-8"), headers)
-    # 사내 LLM은 프록시를 거치지 않는다
+    # 사내 AI는 프록시를 거치지 않는다
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     try:
         with opener.open(req, timeout=int(lc.get("timeout", 120))) as r:
             data = json.loads(r.read().decode("utf-8"))
     except Exception as e:
-        raise LLMError(f"LLM 호출 실패: {e}") from e
+        raise LLMError(f"사내 AI 호출 실패: {e}") from e
     if "choices" in data:
-        return data["choices"][0]["message"]["content"]
+        return data["choices"][0]["message"]["content"] or ""
     return (data.get("message") or {}).get("content", "")
+
+
+def ask(conn, cfg, question, result):
+    context = build_context(conn, result)
+    if not context:
+        return "관련 사례를 찾지 못했습니다."
+    return chat(cfg, [{"role": "system", "content": SYSTEM},
+                      {"role": "user", "content": f"[사례]\n{context}\n\n[질문]\n{question}"}])

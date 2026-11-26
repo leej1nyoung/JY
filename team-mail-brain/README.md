@@ -4,6 +4,8 @@
 비슷한 사례 메일 스레드를 찾아 주는 사내용 도구입니다.
 
 - 찾은 사례마다 **누구 메일함에 있었는지**를 같이 보여 줍니다. 원본을 보고 그 사람에게 바로 물어보면 됩니다.
+- 메일 스레드마다 **사례 DB 한 줄**(거래처·국가·모델·품번·분류·이슈·조치·결과)이 자동으로 만들어집니다. 사람이 분류하거나 엑셀로 정리할 필요가 없습니다.
+- 질문하면 **"총 N건 / 주요 품번 / 공통 조치 / 결과 분포 / 최근 사례"** 요약이 먼저 나옵니다.
 - 자주 쓰는 절차는 **노하우 카드**로 정리해 둡니다. 카드는 검색할 때 메일보다 먼저 나옵니다.
 - **모든 데이터는 이 프로그램을 실행한 PC 안에만** 저장됩니다. 외부 서버로 아무것도 보내지 않습니다.
 
@@ -79,7 +81,62 @@ python -m mailbrain ingest D:\pst\이진영 --owner 이진영 --since 2025-12-01
 
 ---
 
-## 5. 질문하기
+## 5. 처음 해 볼 것: PST 1개 → 메일 100건 → 사례 DB
+
+```bat
+python -m mailbrain ingest D:\pst\러시아.pst --owner 이진영 --limit 100
+python -m mailbrain cases show --dealer TMU
+python -m mailbrain cases export 사례_시험.csv
+```
+
+`사례_시험.csv`를 엑셀로 열어 거래처·품번·분류가 맞게 뽑혔는지 확인합니다.
+틀린 게 있으면 `data/config.json`의 `case_rules`에 거래처 표기나 분류 키워드를 추가합니다 (아래 6-1).
+확인되면 `--limit` 없이 전체를 넣습니다.
+
+## 6. 사례 DB
+
+메일 **스레드 하나 = 사례 하나**입니다. 문의 메일과 결과 회신이 같은 스레드에 있기 때문에, 메일 한 통이 아니라 스레드 단위로 정리해야 "이슈 → 조치 → 결과"가 한 줄에 모입니다.
+
+| 항목 | 규칙 추출 (기본, AI 없음) | 사내 AI 정리 (선택) |
+|---|---|---|
+| 거래처·국가 | 거래처 표기 사전 + 메일 도메인(.ru 등) | AI가 판단, 없으면 규칙 값 |
+| 품번 | `31Q6-10130` 같은 4-5자리 형식 | AI가 고르되 **메일에 실제로 있는 품번만** 남김 |
+| 모델 | HL/HX/HW/R + 숫자 형식 | AI |
+| 분류 | 키워드 점수 (클레임/워런티, 견적/가격, 오더/백오더, 납기/선적, 대금/결제, 통관/규제, 품번/기술, 텐더, 재고/STO) | 같은 목록 중 AI가 선택 |
+| 결과 상태 | 마지막 메일부터 승인·반려·선적·완료·취소 표현 찾기 | AI |
+| 이슈·조치·결과 | 해당 문장을 그대로 뽑음 | AI가 짧게 요약 + 2~3문장 요약 |
+
+- 메일을 넣으면 규칙 추출은 **자동으로** 됩니다.
+- **사례 DB 탭**에서 거래처·국가·분류·결과·품번·모델·단어로 걸러 보고, 위에 요약(총 몇 건, 주요 품번, 결과 분포, 최근 사례)이 나옵니다. 행을 누르면 원본 메일 스레드가 열립니다.
+- **엑셀(CSV) 내려받기**로 보고서용 표를 바로 만들 수 있습니다.
+- 사내 AI가 연결돼 있으면 사례 DB 탭에 **"AI로 100건 정리 (시험)"** 버튼이 나옵니다. 한 번 AI로 정리한 사례는 새 메일이 붙기 전까지 다시 부르지 않습니다.
+
+```bat
+python -m mailbrain cases build --ai --limit 100     (AI로 100건만 시험)
+python -m mailbrain cases build --ai                 (전체)
+python -m mailbrain cases show --part 31Q6-10130
+python -m mailbrain cases export 사례.csv --dealer TMU
+```
+
+### 6-1. 규칙 고치기 (`data/config.json`)
+
+바꾸고 싶은 항목만 `case_rules`에 넣으면 됩니다. 예:
+
+```json
+"case_rules": {
+  "dealers": {
+    "TMU": ["TMU", "TechMashUnit", "ТехМашЮнит"],
+    "Ferronordic": ["Ferronordic", "Ферронордик", "FNM"],
+    "TSC": ["TSC"]
+  },
+  "dealer_country": {"TMU": "러시아", "Ferronordic": "러시아", "TSC": "러시아"}
+}
+```
+
+`dealers`를 넣으면 기본 목록을 **통째로 바꾸므로** 쓰는 거래처를 모두 적으세요. 고친 뒤에는 `python -m mailbrain cases build`로 다시 정리합니다 (AI로 정리한 사례는 유지됨).
+기본값 전체는 `mailbrain/cases.py` 맨 위 `CASE_RULES`에 있습니다.
+
+## 7. 질문하기
 
 문장으로 물어도 되고 단어만 넣어도 됩니다.
 
@@ -95,7 +152,7 @@ python -m mailbrain ingest D:\pst\이진영 --owner 이진영 --since 2025-12-01
 
 사례를 누르면 메일 스레드 전체가 날짜순으로 열립니다. 회신 메일은 새로 쓴 부분만 보여 주고, 인용된 이전 메일은 "원문 보기"로 접어 둡니다.
 
-## 6. 노하우 카드 (자산화)
+## 8. 노하우 카드 (자산화)
 
 메일 스레드는 길고 흩어져 있어서, 처음 하는 사람은 다 읽기 어렵습니다.
 사례 상세 화면의 **"노하우 카드로 정리"** 를 누르면 배경 / 진행 순서 / 관련 부서·담당자 / 필요 서류 / 주의할 점 틀이 채워진 카드가 열립니다.
@@ -103,7 +160,7 @@ python -m mailbrain ingest D:\pst\이진영 --owner 이진영 --since 2025-12-01
 
 권장: 팀 회의 때 "이번 달 특이 건" 1~2개씩 카드로 정리.
 
-## 7. 개인 메일·민감 정보 관리
+## 9. 개인 메일·민감 정보 관리
 
 - 자동 제외 폴더: 지운 편지함, 정크, 임시 보관함, 보낼 편지함, 일정, 연락처, 작업 등
 - 자동 제외 제목: `[광고]`, 급여명세, 연말정산, 건강검진, 비밀번호 등 → `data/config.json`의 `exclude_subject_keywords`에서 추가
@@ -117,10 +174,11 @@ python -m mailbrain ingest D:\pst\이진영 --owner 이진영 --since 2025-12-01
 
 `data/config.json`을 고친 뒤에는 서버를 껐다 켜세요. 제외 규칙은 **새로 넣는 메일부터** 적용됩니다.
 
-## 8. (선택) 사내 AI로 요약 답변 받기
+## 10. (선택) 사내 AI 연결
 
-회사에 사내 LLM(사내 GPT 게이트웨이, 또는 서버 PC에 설치한 Ollama 등)이 있으면, 찾은 사례를 읽고
-"어떤 절차로 했고 누구에게 물어보면 되는지"를 요약하게 할 수 있습니다. `data/config.json`:
+사내 AI를 연결하면 두 가지를 합니다. ① 사례 DB의 이슈·조치·결과·요약 정리 ② 질문에 대한 요약 답변.
+**프로그램에서 호출할 수 있는 API 주소와 키**가 필요합니다. Copilot 채팅 화면처럼 사람이 쓰는 화면은 연결할 수 없고,
+IT/DT 부서에 "사내 Azure OpenAI(또는 사내 GPT) API 사용 신청"을 하면 됩니다. `data/config.json`:
 
 ```json
 "llm": {
@@ -132,20 +190,24 @@ python -m mailbrain ingest D:\pst\이진영 --owner 이진영 --since 2025-12-01
 }
 ```
 
-- `kind`: Ollama는 `"ollama"`, OpenAI 호환 사내 게이트웨이는 `"openai"`
+- `kind`: Ollama는 `"ollama"`, OpenAI 호환 사내 게이트웨이는 `"openai"`, Azure OpenAI는 `"azure"`
+  (azure일 때 `url`은 `https://<리소스>.openai.azure.com`, `model`은 배포 이름, `api_version` 지정)
+- Azure처럼 사내 주소가 아닌 서비스는 기본적으로 차단됩니다. 회사가 승인한 계약 서비스일 때만 `"allow_external": true`를 넣으세요.
 - API 키가 필요하면 서버 PC의 환경변수 `MAILBRAIN_LLM_KEY`에 넣습니다 (파일에 쓰지 않음)
 - **사설 IP(10.x, 172.16~31.x, 192.168.x)나 로컬 주소가 아니면 연결하지 않습니다.**
 - AI 요약은 찾은 사례 6개 안에서만 답하게 되어 있지만, 틀릴 수 있으니 원문을 꼭 확인하세요.
 
-## 9. 백업·이전
+## 11. 백업·이전
 
 `data` 폴더 하나만 복사하면 됩니다 (`brain.db` + `config.json`).
 다른 PC로 옮길 때도 프로그램 폴더 + `data` 폴더를 복사하면 그대로 동작합니다.
 
-## 10. 알아 둘 한계
+## 12. 알아 둘 한계
 
 - 첨부파일은 **이름만** 검색됩니다 (내용은 읽지 않음. 사내 DRM 문서도 많아서).
 - 메일 묶음(스레드)은 RE:/FW:/회신:/答复: 등을 뗀 **제목 기준**입니다. 제목을 바꿔 회신하면 다른 사례로 보입니다.
+- 규칙 추출의 이슈·조치·결과는 메일 문장을 그대로 뽑은 것이라 틀릴 수 있습니다 (화면에 "자동 추출(규칙)"으로 표시). 정확한 요약은 사내 AI 연결 후.
+- 벡터DB(의미 검색)는 넣지 않았습니다. 임베딩 모델도 인터넷이나 외부 AI가 필요한데, 품번·거래처·모델처럼 **정확히 일치해야 하는 검색은 지금 방식(단어 검색 + 사례 DB 필터)이 더 정확**합니다. 사내 AI API가 생기면 추가를 검토합니다.
 - 의미 검색("비슷한 뜻")이 아니라 **단어 검색**입니다. 안 나오면 다른 표현(영어·러시아어·약어)으로도 찾아보세요. 자주 쓰는 다른 표현은 `synonyms`에 넣어 두면 함께 찾습니다.
 - 메일 수만 통 규모에서는 문제없이 동작하도록 만들었습니다 (SQLite 전문검색).
 
@@ -155,6 +217,9 @@ python -m mailbrain ingest D:\pst\이진영 --owner 이진영 --since 2025-12-01
 python -m mailbrain ingest <PST·폴더·jsonl...> --owner 이름 [--since YYYY-MM-DD | --all]
 python -m mailbrain serve --host 0.0.0.0 --port 8765 --password 암호 [--keep-uploads]
 python -m mailbrain search "질문" [--owner 이름]
+python -m mailbrain cases build [--ai] [--limit 100]
+python -m mailbrain cases show [--dealer TMU] [--part 31Q6-10130] [--q "fan brake"]
+python -m mailbrain cases export 사례.csv
 python -m mailbrain stats
 python -m mailbrain remove-owner 이름
 ```
@@ -163,6 +228,6 @@ python -m mailbrain remove-owner 이름
 
 ## 개발자용
 
-- 구조: `mailbrain/readers.py`(PST·EML·MSG·MBOX·JSONL 읽기) → `ingest.py`(정리·중복 합치기·색인) → `search.py`(사례 검색) → `server.py` + `static/index.html`(웹 화면). `llm.py`는 선택.
+- 구조: `mailbrain/readers.py`(PST·EML·MSG·MBOX·JSONL 읽기) → `ingest.py`(정리·중복 합치기·색인) → `cases.py`(사례 DB: 규칙/AI 추출) → `search.py`(사례 검색) → `server.py` + `static/index.html`(웹 화면). `llm.py`는 선택.
 - 테스트: `python -m unittest discover -s tests`
 - `.msg` 파일을 넣으려면 `pip install extract-msg` 추가 설치.

@@ -66,6 +66,15 @@ CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(
   title, body, tokenize = 'unicode61 remove_diacritics 2'
 );
 
+-- 사례 DB: 스레드 하나 = 사례 하나 (규칙 또는 사내 AI가 자동 정리)
+CREATE TABLE IF NOT EXISTS cases (
+  thread_id INTEGER PRIMARY KEY REFERENCES threads(id) ON DELETE CASCADE,
+  subject TEXT, first_date TEXT, last_date TEXT, msg_count INTEGER,
+  dealer TEXT, country TEXT, model TEXT, part_no TEXT, category TEXT, status TEXT,
+  issue TEXT, action TEXT, result TEXT, summary TEXT, owners TEXT, method TEXT, updated TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_cases_last ON cases(last_date);
+
 CREATE TABLE IF NOT EXISTS sources (
   id INTEGER PRIMARY KEY,
   path TEXT,
@@ -117,7 +126,11 @@ DEFAULT_CONFIG = {
         "model": "qwen2.5:14b",
         "api_key_env": "MAILBRAIN_LLM_KEY",
         "timeout": 120,
+        "api_version": "2024-10-21",   # kind 가 "azure" 일 때만
     },
+    # 사례 DB 자동 분류 규칙 (거래처 표기·국가·분류 키워드 등). 비워 두면 기본값 사용.
+    # 바꾸고 싶은 항목만 넣으면 된다. 예: {"dealers": {"TMU": ["TMU", "TechMashUnit"], ...}}
+    "case_rules": {},
     "max_body_chars": 20000,
 }
 

@@ -12,7 +12,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import ingest, llm, search
+from . import cases, ingest, llm, search
 from .db import ConnPool, connect
 
 STATIC = os.path.join(os.path.dirname(__file__), "static")
@@ -37,6 +37,20 @@ class Jobs:
         self.q.put((job, path))
         return job
 
+    def add_task(self, title, owner, fn):
+        """fn(conn, job) 을 대기열에서 실행 (사례 AI 정리 등)."""
+        job = {"id": len(self.items) + 1, "file": title, "owner": owner, "since": "", "status": "대기",
+               "seen": 0, "added": 0, "merged": 0, "skipped": 0, "dup": 0, "error": None,
+               "queued": datetime.now().strftime("%H:%M:%S"), "kind": "task"}
+        with self.lock:
+            self.items.append(job)
+        self.q.put((job, fn))
+        return job
+
+    def busy(self, kind):
+        with self.lock:
+            return any(j.get("kind") == kind and j["status"] in ("대기", "처리 중") for j in self.items)
+
     def list(self):
         with self.lock:
             return [dict(j) for j in self.items[-30:]][::-1]
@@ -46,6 +60,13 @@ class Jobs:
         while True:
             job, path = self.q.get()
             job["status"] = "처리 중"
+            if callable(path):
+                try:
+                    path(conn, job)
+                    job["status"] = "완료"
+                except Exception as e:
+                    job["status"], job["error"] = "오류", str(e)[:500]
+                continue
 
             def progress(_fp, c, job=job):
                 job.update({k: c[k] for k in ("seen", "added", "merged", "skipped", "dup")})
@@ -154,6 +175,40 @@ def make_handler(pool, cfg, jobs, upload_dir, password):
                     s = search.stats(conn)
                     s["llm"] = bool((cfg.get("llm") or {}).get("enabled"))
                     self._json(s)
+                elif method == "GET" and u.path == "/api/cases":
+                    self._json(cases.query(conn, qs, int(qs.get("limit", 100)), int(qs.get("offset", 0))))
+                elif method == "GET" and u.path == "/api/cases/facets":
+                    f = cases.facets(conn)
+                    f["llm"] = bool((cfg.get("llm") or {}).get("enabled"))
+                    self._json(f)
+                elif method == "GET" and u.path in ("/api/cases/export.csv", "/api/cases/export.jsonl"):
+                    fmt = "jsonl" if u.path.endswith("jsonl") else "csv"
+                    data = cases.export(conn, fmt, qs).encode("utf-8")
+                    name = f"cases_{datetime.now().strftime('%Y%m%d')}.{fmt}"
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/csv; charset=utf-8" if fmt == "csv"
+                                     else "application/x-ndjson; charset=utf-8")
+                    self.send_header("Content-Disposition", f'attachment; filename="{name}"')
+                    self.send_header("Content-Length", str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+                elif method == "POST" and u.path == "/api/cases/build":
+                    b = self._body()
+                    use_ai = bool(b.get("ai"))
+                    if use_ai and not (cfg.get("llm") or {}).get("enabled"):
+                        return self._json({"error": "사내 AI가 연결돼 있지 않습니다 (README 10장)"}, 400)
+                    if jobs.busy("task"):
+                        return self._json({"error": "이미 사례 정리 작업이 진행 중입니다"}, 409)
+                    limit = int(b["limit"]) if b.get("limit") else None
+
+                    def run(conn, job, use_ai=use_ai, limit=limit, rebuild=bool(b.get("rebuild"))):
+                        def prog(st):
+                            job.update(total=st["total"], seen=st["done"], added=st["ai"], skipped=st["ai_failed"],
+                                       dup=st["ai_skipped"], error=st["last_error"] or None)
+                        cases.build(conn, cfg, use_ai=use_ai, limit=limit, rebuild=rebuild, progress=prog)
+
+                    title = f"사례 {'AI' if use_ai else '규칙'} 정리" + (f" (최대 {limit}건)" if limit else "")
+                    self._json(jobs.add_task(title, "-", run))
                 elif method == "GET" and u.path == "/api/jobs":
                     self._json(jobs.list())
                 elif method == "PUT" and u.path == "/api/upload":
@@ -208,6 +263,13 @@ def make_handler(pool, cfg, jobs, upload_dir, password):
 
 def serve(db_path, cfg, data_dir, host="127.0.0.1", port=8765, password=None, keep_uploads=False):
     pool = ConnPool(db_path)
+    c0 = connect(db_path)
+    missing = [r[0] for r in c0.execute(
+        "SELECT id FROM threads WHERE hidden=0 AND id NOT IN (SELECT thread_id FROM cases)")]
+    if missing:  # 예전 버전으로 넣은 메일도 사례 DB로 (규칙 추출)
+        print(f"사례 DB 정리 중: {len(missing)}건 …")
+        cases.build(c0, cfg, tids=missing, log=lambda *_: None)
+    c0.close()
     upload_dir = os.path.join(data_dir, "uploads")
     jobs = Jobs(db_path, cfg, keep_uploads)
     httpd = ThreadingHTTPServer((host, port), make_handler(pool, cfg, jobs, upload_dir, password))

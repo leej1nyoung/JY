@@ -219,3 +219,122 @@ class ServerTests(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CaseTests(unittest.TestCase):
+    def setUp(self):
+        from mailbrain import cases
+        self.cases = cases
+        self.tmp = tempfile.mkdtemp()
+        self.conn = connect(os.path.join(self.tmp, "brain.db"))
+        d = os.path.join(self.tmp, "m")
+        os.makedirs(d)
+        eml(f"{d}/1.eml", "TMU warranty claim - 31Q6-10130 Fan Brake Failure (HL775-9S)",
+            "Kolesnik <k@tmu.ru>", "이진영 <jy@hd.com>", "Mon, 02 Mar 2026 09:00:00 +0300",
+            "Dear Mr. Lee,\nCustomer machine HL775-9S, fan brake failure after 800 hours.\n"
+            "Please review warranty for 31Q6-10130.\nBest regards,", "<w1@tmu.ru>")
+        eml(f"{d}/2.eml", "RE: TMU warranty claim - 31Q6-10130 Fan Brake Failure (HL775-9S)",
+            "이진영 <jy@hd.com>", "Kolesnik <k@tmu.ru>", "Fri, 13 Mar 2026 10:00:00 +0900",
+            "Dear Kolesnik,\nAM운영팀 검토 결과 워런티 승인되었습니다.\n"
+            "Replacement 31Q6-10130 will be sent free of charge with next shipment.\nBest regards,", "<w2@hd.com>")
+        eml(f"{d}/3.eml", "Fan brake failure again - TMU 31Q6-10130", "Kolesnik <k@tmu.ru>",
+            "이진영 <jy@hd.com>", "Mon, 02 Nov 2026 09:00:00 +0300",
+            "Same fan brake failure on 2nd unit. Please review warranty.", "<w3@tmu.ru>")
+        eml(f"{d}/4.eml", "RE: Fan brake failure again - TMU 31Q6-10130", "이진영 <jy@hd.com>",
+            "Kolesnik <k@tmu.ru>", "Tue, 10 Nov 2026 10:00:00 +0900",
+            "Warranty claim rejected because operating hours exceeded the warranty period.", "<w4@hd.com>")
+        eml(f"{d}/5.eml", "TSC price inquiry R1250 coupling 11QE-00101", "Ryzhov <r@tsc.ru>",
+            "이진영 <jy@hd.com>", "Tue, 10 Nov 2026 10:00:00 +0300",
+            "Please send quotation for 11QE-00101 x 2 pcs, FCA Busan. Date 2026-11234 ref.", "<p1@tsc.ru>")
+        ingest.ingest_path(self.conn, d, "이진영", CFG, log=lambda *_: None)
+
+    def tearDown(self):
+        self.conn.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def case_by_subject(self, word):
+        return dict(self.conn.execute("SELECT * FROM cases WHERE subject LIKE ?", (f"%{word}%",)).fetchone())
+
+    def test_rule_extraction(self):
+        c = self.case_by_subject("TMU warranty claim")
+        self.assertEqual(c["dealer"], "TMU")
+        self.assertEqual(c["country"], "러시아")
+        self.assertEqual(c["part_no"], "31Q6-10130")
+        self.assertEqual(c["model"], "HL775-9S")
+        self.assertIn("클레임/워런티", c["category"])
+        self.assertEqual(c["status"], "승인")
+        self.assertEqual(c["msg_count"], 2)
+        c2 = self.case_by_subject("again")
+        self.assertEqual(c2["status"], "반려")
+        p = self.case_by_subject("TSC price")
+        self.assertEqual(p["dealer"], "TSC")
+        self.assertEqual(p["part_no"], "11QE-00101")  # 2026-11234 는 품번 아님
+        self.assertIn("R1250", p["model"])
+        self.assertIn("견적/가격", p["category"])
+
+    def test_question_summary(self):
+        r = search.search(self.conn, "TMU Fan Brake Failure 사례", CFG)
+        cs = r["case_summary"]
+        self.assertEqual(cs["total"], 2)
+        self.assertEqual(cs["part_no"][0], {"value": "31Q6-10130", "count": 2})
+        self.assertEqual({x["value"] for x in cs["status"]}, {"승인", "반려"})
+        self.assertEqual(cs["recent"][0]["date"], "2026-11-10")
+        self.assertIsNotNone(r["threads"][0]["case"])
+
+    def test_query_filters_and_export(self):
+        r = self.cases.query(self.conn, {"dealer": "TMU", "part_no": "31q610130"})
+        self.assertEqual(r["total"], 2)
+        r = self.cases.query(self.conn, {"status": "승인"})
+        self.assertEqual(r["total"], 1)
+        csv_text = self.cases.export(self.conn, "csv", {"dealer": "TSC"})
+        self.assertTrue(csv_text.startswith("﻿사례번호"))
+        self.assertIn("11QE-00101", csv_text)
+        self.assertEqual(len(self.cases.export(self.conn, "jsonl").strip().split("\n")), 3)
+
+    def test_ai_extraction_blocks_made_up_part_numbers(self):
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+
+        class Fake(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"]))
+                body = json.dumps({"message": {"content": json.dumps({
+                    "dealer": "TMU", "country": "러시아", "model": "HL775-9S",
+                    "part_no": ["31Q6-10130", "99ZZ-12345"],  # 두 번째는 메일에 없는 품번
+                    "category": "클레임/워런티", "issue": "팬 브레이크 고장", "action": "워런티 승인 후 무상 교체",
+                    "result": "승인, 다음 선적에 무상 발송", "status": "승인",
+                    "summary": "TMU가 팬 브레이크 고장으로 워런티를 요청했고 AM운영팀 검토 후 승인됨."},
+                    ensure_ascii=False)}}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(body)
+
+        srv = HTTPServer(("127.0.0.1", 0), Fake)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        cfg = json.loads(json.dumps(CFG))
+        cfg["llm"].update(enabled=True, url=f"http://127.0.0.1:{srv.server_address[1]}")
+        try:
+            st = self.cases.build(self.conn, cfg, use_ai=True, limit=1)
+            self.assertEqual(st["ai"], 1)
+            ai = [dict(r) for r in self.conn.execute("SELECT * FROM cases WHERE method='AI'")]
+            self.assertEqual(len(ai), 1)
+            self.assertNotIn("99ZZ-12345", ai[0]["part_no"])
+            self.assertEqual(len(self.conn.execute("SELECT * FROM cases").fetchall()), 3)
+            # 규칙 재정리가 AI 결과를 덮어쓰지 않음
+            self.cases.build(self.conn, cfg)
+            self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM cases WHERE method='AI'").fetchone()[0], 1)
+            sm = self.cases.query(self.conn, {})["summary"]
+            self.assertEqual(sm["action"][0]["value"], "워런티 승인 후 무상 교체")
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+    def test_external_ai_address_refused(self):
+        from mailbrain import llm
+        cfg = json.loads(json.dumps(CFG))
+        cfg["llm"].update(enabled=True, url="https://api.anthropic.com")
+        with self.assertRaises(llm.LLMError):
+            llm.chat(cfg, [{"role": "user", "content": "x"}])

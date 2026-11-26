@@ -54,6 +54,28 @@
   .kcard { background: var(--card); border-color: var(--card-line); }
   .kcard h3 { color: #6b4b00; }
   .kbody { white-space: pre-wrap; }
+  .sumbox { border-left: 3px solid var(--ok); }
+  .sumbox h3 { margin: 0 0 8px; font-size: 15px; }
+  .sumgrid { display: grid; grid-template-columns: 110px 1fr; gap: 4px 12px; font-size: 13px; }
+  .sumgrid dt { color: var(--sub); } .sumgrid dd { margin: 0; }
+  .sumgrid a { color: var(--accent); cursor: pointer; }
+  .caseline { font-size: 13px; margin-top: 6px; padding: 6px 9px; background: #f6f8fb; border-radius: 6px; }
+  .caseline b { color: var(--sub); font-weight: 600; margin-right: 4px; }
+  .chip.st-승인, .chip.st-완료, .chip.st-선적·출고 { background: #e6f4ec; color: var(--ok); }
+  .chip.st-반려, .chip.st-취소 { background: #fbeee8; color: var(--warn); }
+  .chip.st-진행 { background: #eef1f6; }
+  .chip.dealer { background: #e9eefc; color: #2c46a0; font-weight: 600; }
+  .chip.part { font-family: Consolas, monospace; background: #fff; border: 1px solid var(--line); color: var(--text); }
+  .ctable { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+  .ctable th { position: sticky; top: 0; background: #f0f2f5; white-space: nowrap; }
+  .ctable td { vertical-align: top; }
+  .ctable tr.row { cursor: pointer; } .ctable tr.row:hover td { background: #f5f8fc; }
+  .ctable .mono { font-family: Consolas, monospace; font-size: 12px; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  .cfilters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .cfilters select, .cfilters input { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid #c8ced8; border-radius: 6px; background: #fff; }
+  .cfilters input { width: 130px; } .cfilters input#cf-q { width: 200px; }
+  .aibar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; font-size: 13px; color: var(--sub); }
   .empty { text-align: center; color: var(--sub); padding: 40px 0; }
   .more { display: block; margin: 10px auto; }
   /* 사례 상세 */
@@ -94,6 +116,7 @@
   <h1>AM영업팀 브레인 <small>팀 메일 사례 검색</small></h1>
   <nav>
     <button data-tab="ask" class="on">질문하기</button>
+    <button data-tab="casedb">사례 DB</button>
     <button data-tab="cards">노하우 카드</button>
     <button data-tab="ingest">메일 넣기</button>
   </nav>
@@ -120,6 +143,27 @@
       </div>
     </div>
     <div id="results"><div class="empty">질문을 입력하면 팀원들 메일에서 비슷한 사례를 찾아 드려요.<br>찾은 사례는 "누구 메일함에 있었는지"도 같이 보여 주니, 그분께 바로 물어보면 됩니다.</div></div>
+  </section>
+
+  <!-- 사례 DB -->
+  <section id="tab-casedb" class="tab">
+    <div class="box">
+      <div class="cfilters">
+        <select id="cf-dealer"><option value="">거래처 전체</option></select>
+        <select id="cf-country"><option value="">국가 전체</option></select>
+        <select id="cf-category"><option value="">분류 전체</option></select>
+        <select id="cf-status"><option value="">결과 전체</option></select>
+        <input id="cf-part" placeholder="품번">
+        <input id="cf-model" placeholder="모델">
+        <input id="cf-q" placeholder="단어 (예: fan brake)">
+        <button class="primary" id="cf-go" style="padding:6px 16px">조회</button>
+        <button class="ghost" id="cf-reset">초기화</button>
+        <button class="ghost" id="cf-csv" style="margin-left:auto">엑셀(CSV) 내려받기</button>
+      </div>
+      <div class="aibar" id="aibar"></div>
+    </div>
+    <div id="case-sum"></div>
+    <div id="case-table"></div>
   </section>
 
   <!-- 노하우 카드 -->
@@ -204,13 +248,14 @@ function showTab(name) {
   document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x.dataset.tab === name));
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.id === "tab-" + name));
   if (name === "cards") loadCards();
+  if (name === "casedb") loadCaseDB();
   if (name === "ingest") { loadStats(); loadJobs(); }
 }
 
 /* 현황 */
 async function loadStats() {
   const s = await api("/api/stats");
-  $("#stat").textContent = `메일 ${s.messages.toLocaleString()}통 · 사례 ${s.threads.toLocaleString()}개 · 노하우 ${s.cards}개`;
+  $("#stat").textContent = `메일 ${s.messages.toLocaleString()}통 · 사례 ${s.cases.toLocaleString()}건 (AI 정리 ${s.cases_ai.toLocaleString()}) · 노하우 ${s.cards}개`;
   llmOn = s.llm; $("#llm-wrap").style.display = s.llm ? "flex" : "none";
   const sel = $("#f-owner"), cur = sel.value;
   sel.innerHTML = '<option value="">팀 전체</option>' + s.owners.map(o => `<option>${esc(o.owner)}</option>`).join("");
@@ -255,6 +300,7 @@ function renderHead(r, q) {
   if (q) {
     h += `<div class="meta terms" style="margin-bottom:8px">찾은 단어: ${r.groups.map(g => `<span title="${esc(g.join(", "))}">${esc(g[0])}${g.length > 1 ? " +" + (g.length - 1) : ""}</span>`).join("") || "없음"}
       · 사례 ${r.total}개</div>`;
+    if (r.case_summary && r.case_summary.total) h += renderSummary(r.case_summary, "질문과 맞는 사례 요약" + (r.case_summary.basis ? ` (${r.case_summary.basis} 포함)` : ""));
     if (r.experts.length) h += `<div class="box experts meta">이 주제를 많이 다룬 사람: ${r.experts.map(e => `<b>${esc(e.owner)}</b>`).join(", ")} — 아래 사례를 보고 궁금한 건 이분들께 물어보세요.</div>`;
   } else h += `<div class="meta" style="margin-bottom:8px">최근 사례</div>`;
   if (llmOn && $("#f-llm").checked && q) h += `<div class="box answer" id="answer"><h3>AI 요약</h3><span class="meta">사례를 읽고 정리하는 중…</span></div>`;
@@ -269,7 +315,8 @@ function renderThread(t) {
     <h3>${hl(t.subject, lastTerms)}</h3>
     <div class="meta">${d10(t.first_date)}${t.last_date && d10(t.last_date) !== d10(t.first_date) ? " ~ " + d10(t.last_date) : ""} · 메일 ${t.count}통 · 참여 ${esc(t.participants.slice(0, 5).join(", "))}${t.participants.length > 5 ? " 외" : ""}</div>
     <div class="snip">${hl(t.snippet, lastTerms)}</div>
-    <div class="chips">${t.owners.map(o => `<span class="chip owner">${esc(o)} 메일함</span>`).join("")}
+    ${caseLine(t.case)}
+    <div class="chips">${caseChips(t.case)}${t.owners.map(o => `<span class="chip owner">${esc(o)} 메일함</span>`).join("")}
       ${t.card ? `<span class="chip cardtag">★ ${esc(t.card.title)}</span>` : ""}
       ${(t.missing || []).map(m => `<span class="chip miss">'${esc(m)}' 없음</span>`).join("")}
       ${t.attachments.slice(0, 4).map(a => `<span class="chip">📎 ${esc(a)}</span>`).join("")}</div>
@@ -304,6 +351,7 @@ async function openThread(id, hitMsg) {
       <button class="ghost" id="t-close">닫기</button></div>
     <div class="meta" style="margin-bottom:12px">${d10(t.first_date)} ~ ${d10(t.last_date)} · ${t.messages.length}통 ·
       메일함: ${t.owners.map(o => `<b>${esc(o)}</b>`).join(", ")} · 참여: ${esc(t.participants.join(", "))}</div>
+    ${t.case ? `<div class="box">${caseChipsHTML(t.case)}${caseLine(t.case, true)}</div>` : ""}
     ${t.cards.map(c => `<div class="box kcard"><h3>★ ${esc(c.title)}</h3><div class="kbody">${esc(c.body)}</div><div class="meta">${esc(c.author)} · ${esc(c.updated)}</div></div>`).join("")}
     ${t.messages.map(m => `<div class="msg ${m.id === hitMsg ? "hit" : ""}" id="m${m.id}">
       <div class="hd"><b>${esc(m.sender)}</b><span class="meta">${esc(m.date)}</span><span class="meta">${esc(m.folder)}</span></div>
@@ -408,11 +456,100 @@ let jobTimer = null;
 async function loadJobs() {
   const js = await api("/api/jobs");
   $("#jobs").innerHTML = js.length ? `<table><tr><th>파일</th><th>주인</th><th>상태</th><th>읽음</th><th>신규</th><th>겹침</th><th>반복</th><th>제외</th></tr>` +
-    js.map(j => `<tr><td>${esc(j.file)}</td><td>${esc(j.owner)}</td><td class="${j.status === "오류" ? "err" : ""}" title="${esc(j.error || "")}">${esc(j.status)}</td><td>${j.seen}</td><td>${j.added}</td><td>${j.merged}</td><td>${j.dup}</td><td>${j.skipped}</td></tr>`).join("") + "</table>" : "없음";
+    js.map(j => j.kind === "task"
+      ? `<tr><td>${esc(j.file)}</td><td>-</td><td class="${j.status === "오류" ? "err" : ""}" title="${esc(j.error || "")}">${esc(j.status)}</td><td colspan="5">${j.seen}/${j.total ?? "?"}건 · AI 정리 ${j.added} · 이미 정리됨 ${j.dup} · 실패 ${j.skipped}${j.error ? ` · <span class="err">${esc(j.error)}</span>` : ""}</td></tr>`
+      : `<tr><td>${esc(j.file)}</td><td>${esc(j.owner)}</td><td class="${j.status === "오류" ? "err" : ""}" title="${esc(j.error || "")}">${esc(j.status)}</td><td>${j.seen}</td><td>${j.added}</td><td>${j.merged}</td><td>${j.dup}</td><td>${j.skipped}</td></tr>`).join("") + "</table>" : "없음";
   const busy = js.some(j => j.status === "대기" || j.status === "처리 중");
   clearTimeout(jobTimer);
   if (busy) jobTimer = setTimeout(loadJobs, 2000); else loadStats();
 }
+
+/* 사례 DB */
+const topList = (xs, n = 5) => (xs || []).slice(0, n).map(x => `${esc(x.value)} <span class="meta">(${x.count})</span>`).join(", ") || '<span class="meta">-</span>';
+const stCls = st => "st-" + String(st || "").split(" ")[0];
+
+function renderSummary(sm, title) {
+  return `<div class="box sumbox"><h3>${esc(title)}: 총 ${sm.total}건</h3><dl class="sumgrid">
+    <dt>결과</dt><dd>${topList(sm.status, 6)}</dd>
+    <dt>주요 품번</dt><dd>${topList(sm.part_no)}</dd>
+    ${sm.model.length ? `<dt>모델</dt><dd>${topList(sm.model)}</dd>` : ""}
+    ${sm.dealer.length ? `<dt>거래처</dt><dd>${topList(sm.dealer)}</dd>` : ""}
+    <dt>분류</dt><dd>${topList(sm.category)}</dd>
+    ${sm.action.length ? `<dt>공통 조치</dt><dd>${topList(sm.action)} <span class="meta">(AI 정리 ${sm.ai_count}건 기준)</span></dd>` : ""}
+    <dt>최근 사례</dt><dd>${sm.recent.map(r => `<a data-open="${r.thread_id}">${esc(r.date)} ${esc(r.subject)}</a> <span class="chip ${stCls(r.status)}">${esc(r.status)}</span>`).join("<br>")}</dd>
+  </dl></div>`;
+}
+function caseChipsHTML(c) {
+  if (!c) return "";
+  return `<div class="chips">${c.dealer ? c.dealer.split(", ").map(d => `<span class="chip dealer">${esc(d)}</span>`).join("") : ""}
+    ${c.model ? `<span class="chip">${esc(c.model)}</span>` : ""}
+    ${(c.part_no || "").split(", ").filter(Boolean).slice(0, 4).map(p => `<span class="chip part">${esc(p)}</span>`).join("")}
+    ${(c.category || "").split(", ").filter(Boolean).map(x => `<span class="chip">${esc(x)}</span>`).join("")}
+    <span class="chip ${stCls(c.status)}">${esc(c.status)}</span></div>`;
+}
+function caseChips(c) { return c ? caseChipsHTML(c).replace(/^<div class="chips">|<\/div>$/g, "") : ""; }
+function caseLine(c, full) {
+  if (!c) return "";
+  const rows = [];
+  if (c.method === "AI" && c.issue) rows.push(`<b>이슈</b>${esc(c.issue)}`);
+  if (c.action) rows.push(`<b>조치</b>${esc(full ? c.action : c.action.slice(0, 140))}`);
+  if (c.result) rows.push(`<b>결과</b>${esc(full ? c.result : c.result.slice(0, 140))}`);
+  if (c.summary && full) rows.push(`<b>요약</b>${esc(c.summary)}`);
+  if (!rows.length) return "";
+  return `<div class="caseline">${rows.join("<br>")}<div class="meta" style="margin-top:3px">${c.method === "AI" ? "사내 AI가 정리" : "자동 추출(규칙) — 원문 확인 필요"}</div></div>`;
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-open]");
+  if (a) { e.stopPropagation(); openThread(+a.dataset.open); }
+}, true);
+
+let facetsLoaded = false, caseOffset = 0;
+function caseFilters() {
+  return { dealer: $("#cf-dealer").value, country: $("#cf-country").value, category: $("#cf-category").value,
+    status: $("#cf-status").value, part_no: $("#cf-part").value.trim(), model: $("#cf-model").value.trim(), q: $("#cf-q").value.trim() };
+}
+async function loadCaseDB() {
+  const f = await api("/api/cases/facets");
+  const fill = (sel, vals, label) => { const cur = $(sel).value; $(sel).innerHTML = `<option value="">${label}</option>` + vals.map(v => `<option>${esc(v)}</option>`).join(""); $(sel).value = cur; };
+  fill("#cf-dealer", f.dealer, "거래처 전체"); fill("#cf-country", f.country, "국가 전체");
+  fill("#cf-category", f.category, "분류 전체"); fill("#cf-status", f.status, "결과 전체");
+  const left = f.counts.cases - f.counts.ai;
+  $("#aibar").innerHTML = f.llm
+    ? `사내 AI 정리: ${f.counts.ai.toLocaleString()} / ${f.counts.cases.toLocaleString()}건
+       <button class="ghost" data-ai="100">AI로 100건 정리 (시험)</button>
+       <button class="ghost" data-ai="all">남은 ${left.toLocaleString()}건 모두 AI로 정리</button>
+       <span>진행 상황은 [메일 넣기] 탭의 적재 작업 표에서 볼 수 있어요.</span>`
+    : `지금은 <b>자동 추출(규칙)</b>으로 거래처·품번·모델·분류·결과를 정리해 두었어요. 사내 AI를 연결하면 이슈·조치·결과·요약을 더 정확히 정리합니다 (README 10장).`;
+  $("#aibar").querySelectorAll("[data-ai]").forEach(b => b.onclick = async () => {
+    const lim = b.dataset.ai === "all" ? null : +b.dataset.ai;
+    if (!confirm(lim ? `사내 AI로 최근 사례 ${lim}건을 정리할까요?` : `남은 사례 ${left}건을 모두 사내 AI로 정리할까요? 오래 걸릴 수 있어요.`)) return;
+    try { await api("/api/cases/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ai: true, limit: lim }) }); showTab("ingest"); }
+    catch (e) { alert(e.message); }
+  });
+  runCases(true);
+}
+async function runCases(fresh) {
+  if (fresh) caseOffset = 0;
+  const p = new URLSearchParams({ ...caseFilters(), limit: 100, offset: caseOffset });
+  const r = await api("/api/cases?" + p);
+  if (fresh) $("#case-sum").innerHTML = renderSummary(r.summary, "조회 결과");
+  const rows = r.cases.map(c => `<tr class="row" data-open="${c.thread_id}">
+      <td class="mono">${esc((c.last_date || "").slice(0, 10))}</td><td>${esc(c.dealer)}</td><td>${esc(c.model)}</td>
+      <td class="mono">${esc((c.part_no || "").split(", ").slice(0, 3).join(", "))}</td><td>${esc(c.category)}</td>
+      <td><span class="chip ${stCls(c.status)}">${esc(c.status)}</span></td>
+      <td>${esc(c.method === "AI" ? c.issue : c.subject)}</td><td>${esc((c.action || "").slice(0, 80))}</td>
+      <td>${esc((c.result || "").slice(0, 80))}</td><td>${c.msg_count}</td><td class="meta">${esc(c.owners)}</td><td class="meta">${esc(c.method)}</td></tr>`).join("");
+  if (fresh) $("#case-table").innerHTML = `<div class="tablewrap"><table class="ctable"><thead><tr><th>최근일</th><th>거래처</th><th>모델</th><th>품번</th><th>분류</th><th>결과</th><th>이슈</th><th>조치</th><th>결과 내용</th><th>메일</th><th>메일함</th><th>방식</th></tr></thead><tbody id="ctbody"></tbody></table></div><div id="cmore"></div>`;
+  $("#ctbody").insertAdjacentHTML("beforeend", rows || (fresh ? '<tr><td colspan="12" class="empty">조건에 맞는 사례가 없어요</td></tr>' : ""));
+  caseOffset += r.cases.length;
+  $("#cmore").innerHTML = caseOffset < r.total ? `<button class="ghost more">더 보기 (${r.total - caseOffset}건 남음)</button>` : "";
+  $("#cmore .more")?.addEventListener("click", () => runCases(false));
+}
+$("#cf-go").onclick = () => runCases(true);
+["#cf-part", "#cf-model", "#cf-q"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") runCases(true); }));
+["#cf-dealer", "#cf-country", "#cf-category", "#cf-status"].forEach(s => $(s).onchange = () => runCases(true));
+$("#cf-reset").onclick = () => { ["#cf-dealer", "#cf-country", "#cf-category", "#cf-status", "#cf-part", "#cf-model", "#cf-q"].forEach(s => $(s).value = ""); runCases(true); };
+$("#cf-csv").onclick = () => { location.href = "/api/cases/export.csv?" + new URLSearchParams(caseFilters()); };
 
 loadStats().then(() => run(true));
 </script>
