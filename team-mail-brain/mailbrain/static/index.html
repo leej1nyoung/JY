@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AM영업팀 브레인</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --line: #e2e5ea; --text: #1d2330; --sub: #5d6575;
+    --accent: #0b5cad; --accent-weak: #e7f0fa; --mark: #fff1a8; --warn: #b4441c; --ok: #1d7a46;
+    --card: #fff8e8; --card-line: #f0d99a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.55; word-break: keep-all; }
+  header { background: #0f2a4a; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+  header h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  header h1 small { font-weight: 400; opacity: .7; margin-left: 8px; font-size: 12px; }
+  nav { display: flex; gap: 4px; }
+  nav button { background: transparent; color: #c9d6e6; border: 0; padding: 7px 14px; border-radius: 6px; cursor: pointer; font: inherit; }
+  nav button.on { background: rgba(255,255,255,.14); color: #fff; font-weight: 600; }
+  #stat { margin-left: auto; font-size: 12px; opacity: .75; }
+  main { max-width: 1180px; margin: 0 auto; padding: 20px 24px 60px; }
+  .tab { display: none; } .tab.on { display: block; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+  .ask { display: flex; gap: 8px; }
+  .ask textarea { flex: 1; resize: vertical; min-height: 46px; padding: 11px 13px; font: inherit; font-size: 15px;
+    border: 1px solid #c8ced8; border-radius: 8px; }
+  .ask textarea:focus, input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button.primary { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 0 20px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary:disabled { opacity: .5; cursor: default; }
+  button.ghost { background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  button.ghost:hover { border-color: #aab2bf; }
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; color: var(--sub); font-size: 13px; }
+  .filters select, .filters input, label input[type=text], label input[type=date] { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid #c8ced8; border-radius: 6px; background: #fff; }
+  .examples { margin-top: 8px; font-size: 13px; color: var(--sub); }
+  .examples a { color: var(--accent); cursor: pointer; margin-right: 12px; text-decoration: none; }
+  .meta { color: var(--sub); font-size: 13px; }
+  .terms span { display: inline-block; background: var(--accent-weak); color: var(--accent); border-radius: 4px; padding: 1px 7px; margin: 0 4px 4px 0; font-size: 12px; }
+  .experts b { color: var(--text); }
+  .answer { white-space: pre-wrap; border-left: 3px solid var(--accent); }
+  .answer h3, .result h3 { margin: 0 0 6px; font-size: 15px; }
+  .result { cursor: pointer; }
+  .result:hover { border-color: #9fb3cc; }
+  .result h3 { color: var(--accent); }
+  .snip { margin: 6px 0; color: #333a47; }
+  mark { background: var(--mark); color: inherit; padding: 0 1px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { font-size: 12px; background: #f0f2f5; border-radius: 4px; padding: 1px 7px; color: var(--sub); }
+  .chip.owner { background: #e6f4ec; color: var(--ok); font-weight: 600; }
+  .chip.miss { background: #fbeee8; color: var(--warn); }
+  .chip.cardtag { background: var(--card); color: #8a6200; border: 1px solid var(--card-line); }
+  .kcard { background: var(--card); border-color: var(--card-line); }
+  .kcard h3 { color: #6b4b00; }
+  .kbody { white-space: pre-wrap; }
+  .empty { text-align: center; color: var(--sub); padding: 40px 0; }
+  .more { display: block; margin: 10px auto; }
+  /* 사례 상세 */
+  #drawer { position: fixed; inset: 0; background: rgba(15,25,40,.35); display: none; z-index: 10; }
+  #drawer.on { display: block; }
+  #drawer .sheet { position: absolute; right: 0; top: 0; bottom: 0; width: min(860px, 100%); background: var(--bg); overflow: auto; padding: 20px 24px 60px; box-shadow: -8px 0 30px rgba(0,0,0,.15); }
+  .sheet-top { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
+  .sheet-top h2 { margin: 0; font-size: 18px; flex: 1; }
+  .msg { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .msg .hd { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .msg .hd b { font-size: 14px; }
+  .msg .rc { color: var(--sub); font-size: 12px; margin-top: 2px; }
+  .msg pre { white-space: pre-wrap; font: inherit; margin: 10px 0 0; }
+  .msg details { margin-top: 6px; color: var(--sub); font-size: 13px; }
+  .msg.hit { border-color: #f0c96b; box-shadow: 0 0 0 2px #fdf0c8; }
+  /* 폼 */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { header { flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; } header h1 small, #stat { display: none; }
+    nav button { padding: 6px 10px; } main { padding: 14px 16px 40px; } }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } .ask { flex-direction: column; } button.primary { padding: 10px; } }
+  label { display: block; margin-bottom: 10px; font-size: 13px; color: var(--sub); }
+  label input[type=text], label textarea { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid #c8ced8; border-radius: 6px; }
+  label textarea { min-height: 160px; resize: vertical; }
+  .drop { border: 2px dashed #b5bfcc; border-radius: 10px; padding: 26px; text-align: center; color: var(--sub); background: #fafbfc; cursor: pointer; }
+  .drop.over { border-color: var(--accent); background: var(--accent-weak); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--sub); font-weight: 600; }
+  .bar { height: 6px; background: #e8ebf0; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+  .note { font-size: 13px; color: var(--sub); }
+  .note li { margin-bottom: 3px; }
+  .err { color: var(--warn); }
+</style>
+</head>
+<body>
+<header>
+  <h1>AM영업팀 브레인 <small>팀 메일 사례 검색</small></h1>
+  <nav>
+    <button data-tab="ask" class="on">질문하기</button>
+    <button data-tab="cards">노하우 카드</button>
+    <button data-tab="ingest">메일 넣기</button>
+  </nav>
+  <div id="stat"></div>
+</header>
+
+<main>
+  <!-- 질문하기 -->
+  <section id="tab-ask" class="tab on">
+    <div class="box">
+      <div class="ask">
+        <textarea id="q" placeholder="예) 러시아에 오일 수출할 때 전략물자 판정 받은 사례 있어?"></textarea>
+        <button class="primary" id="go">찾기</button>
+      </div>
+      <div class="filters">
+        <span>메일함</span><select id="f-owner"><option value="">팀 전체</option></select>
+        <span>기간</span><input type="date" id="f-from"> ~ <input type="date" id="f-to">
+        <label style="margin:0;gap:5px;align-items:center;display:none" id="llm-wrap">
+          <input type="checkbox" id="f-llm" checked> 사내 AI로 요약
+        </label>
+      </div>
+      <div class="examples">예시:
+        <a>러시아 오일 전략물자 판정</a><a>통화대체 결제 처리</a><a>Chestny Znak 라벨</a><a>장기재고 특가 STO</a><a>텐더 서류 원산지증명</a>
+      </div>
+    </div>
+    <div id="results"><div class="empty">질문을 입력하면 팀원들 메일에서 비슷한 사례를 찾아 드려요.<br>찾은 사례는 "누구 메일함에 있었는지"도 같이 보여 주니, 그분께 바로 물어보면 됩니다.</div></div>
+  </section>
+
+  <!-- 노하우 카드 -->
+  <section id="tab-cards" class="tab">
+    <div class="grid">
+      <div class="box">
+        <h3 style="margin-top:0" id="card-form-title">새 노하우 카드</h3>
+        <input type="hidden" id="c-id"><input type="hidden" id="c-thread">
+        <label>제목 <input type="text" id="c-title" placeholder="예) 러시아향 오일 수출 시 전략물자 비해당 판정 받는 법"></label>
+        <label>태그 (쉼표로) <input type="text" id="c-tags" placeholder="러시아, 오일, 전략물자, 수출통제"></label>
+        <label>내용 (순서·담당 부서·필요 서류·주의할 점)
+          <textarea id="c-body" placeholder="1. 대상 품목 HS코드 확인&#10;2. 전략물자관리원 Yes-Trade에서 판정 신청 (필요 서류: MSDS, 제품 사양서)&#10;3. 판정까지 약 O주 소요&#10;- 주의: ..."></textarea></label>
+        <label>작성자 <input type="text" id="c-author"></label>
+        <div id="c-link" class="note"></div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="primary" id="c-save" style="padding:8px 20px">저장</button>
+          <button class="ghost" id="c-reset">새로 쓰기</button>
+        </div>
+      </div>
+      <div>
+        <div class="box note">
+          <b>노하우 카드는</b> 메일에서 찾은 사례를 사람이 짧게 정리해 두는 곳이에요.
+          검색할 때 메일보다 먼저 보여 주기 때문에, 한 번 정리해 두면 다음 사람이 메일 스레드를 다 읽지 않아도 됩니다.
+          사례 상세 화면의 "노하우 카드로 정리" 버튼으로 시작하면 메일 스레드와 연결돼요.
+        </div>
+        <div id="card-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 메일 넣기 -->
+  <section id="tab-ingest" class="tab">
+    <div class="grid">
+      <div class="box">
+        <h3 style="margin-top:0">PST 올리기</h3>
+        <label>메일함 주인 이름 <input type="text" id="u-owner" placeholder="예) 이진영"></label>
+        <label>이 날짜 이후 메일만 <input type="date" id="u-since"></label>
+        <div class="drop" id="drop">PST / OST / JSONL 파일을 여기로 끌어다 놓거나 눌러서 고르세요
+          <input type="file" id="u-file" multiple accept=".pst,.ost,.jsonl,.mbox,.eml,.msg" hidden></div>
+        <div id="u-progress"></div>
+        <ul class="note">
+          <li>지운 편지함·정크·임시보관함·일정·연락처는 자동으로 빠집니다.</li>
+          <li>여러 사람 메일함에 같은 메일이 있으면 한 통으로 합치고 "누구 메일함에 있었는지"만 기록합니다.</li>
+          <li>올린 PST 원본은 적재가 끝나면 서버에서 지워집니다.</li>
+          <li>개인 메일이 검색에 보이면 사례 상세에서 <b>검색에서 빼기</b>를 누르세요.</li>
+          <li>PST가 수 GB면 업로드보다 서버 PC에서 <code>ingest.bat</code>로 넣는 게 빠릅니다.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="box"><h3 style="margin-top:0">적재 작업</h3><div id="jobs" class="note">없음</div></div>
+        <div class="box"><h3 style="margin-top:0">들어간 메일함</h3><div id="owners" class="note"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="drawer"><div class="sheet" id="sheet"></div></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const api = async (url, opt = {}) => {
+  const r = await fetch(url, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+};
+let lastTerms = [], lastQuery = "", offset = 0, llmOn = false;
+
+function hl(text, terms) {
+  let s = esc(text);
+  const ts = [...new Set(terms)].filter(t => t.length >= 2).sort((a, b) => b.length - a.length).map(esc)
+    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (!ts.length) return s;
+  return s.replace(new RegExp("(" + ts.join("|") + ")", "gi"), "<mark>$1</mark>");
+}
+const d10 = s => (s || "").slice(0, 10);
+
+/* 탭 */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+function showTab(name) {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x.dataset.tab === name));
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.id === "tab-" + name));
+  if (name === "cards") loadCards();
+  if (name === "ingest") { loadStats(); loadJobs(); }
+}
+
+/* 현황 */
+async function loadStats() {
+  const s = await api("/api/stats");
+  $("#stat").textContent = `메일 ${s.messages.toLocaleString()}통 · 사례 ${s.threads.toLocaleString()}개 · 노하우 ${s.cards}개`;
+  llmOn = s.llm; $("#llm-wrap").style.display = s.llm ? "flex" : "none";
+  const sel = $("#f-owner"), cur = sel.value;
+  sel.innerHTML = '<option value="">팀 전체</option>' + s.owners.map(o => `<option>${esc(o.owner)}</option>`).join("");
+  sel.value = cur;
+  $("#owners").innerHTML = s.owners.length ? `<table><tr><th>이름</th><th>메일</th><th>기간</th></tr>` +
+    s.owners.map(o => `<tr><td>${esc(o.owner)}</td><td>${o.messages.toLocaleString()}통</td><td>${d10(o.first)} ~ ${d10(o.last)}</td></tr>`).join("") + "</table>"
+    : "아직 없음";
+}
+
+/* 검색 */
+$("#go").onclick = () => run(true);
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); run(true); } });
+document.querySelectorAll(".examples a").forEach(a => a.onclick = () => { $("#q").value = a.textContent; run(true); });
+
+async function run(fresh) {
+  const q = $("#q").value.trim();
+  if (fresh) offset = 0;
+  lastQuery = q;
+  const p = new URLSearchParams({ q, owner: $("#f-owner").value, from: $("#f-from").value, to: $("#f-to").value, offset, limit: 20 });
+  const box = $("#results");
+  if (fresh) box.innerHTML = '<div class="empty">찾는 중…</div>';
+  $("#go").disabled = true;
+  try {
+    const r = await api("/api/search?" + p);
+    lastTerms = r.terms;
+    if (fresh) box.innerHTML = renderHead(r, q);
+    else box.querySelector(".more")?.remove();
+    box.insertAdjacentHTML("beforeend", r.threads.map(renderThread).join(""));
+    if (fresh && !r.threads.length && !r.cards.length) box.insertAdjacentHTML("beforeend", '<div class="empty">비슷한 사례를 못 찾았어요. 단어를 바꾸거나(예: 영어·러시아어 표현) 기간을 넓혀 보세요.</div>');
+    offset += r.threads.length;
+    if (offset < r.total) box.insertAdjacentHTML("beforeend", `<button class="ghost more">사례 더 보기 (${r.total - offset}개 남음)</button>`);
+    box.querySelector(".more")?.addEventListener("click", () => run(false));
+    bindResults();
+    if (fresh && llmOn && $("#f-llm").checked && q && r.threads.length) askLLM(q);
+  } catch (e) {
+    box.innerHTML = `<div class="box err">검색 오류: ${esc(e.message)}</div>`;
+  } finally { $("#go").disabled = false; }
+}
+
+function renderHead(r, q) {
+  let h = "";
+  if (q) {
+    h += `<div class="meta terms" style="margin-bottom:8px">찾은 단어: ${r.groups.map(g => `<span title="${esc(g.join(", "))}">${esc(g[0])}${g.length > 1 ? " +" + (g.length - 1) : ""}</span>`).join("") || "없음"}
+      · 사례 ${r.total}개</div>`;
+    if (r.experts.length) h += `<div class="box experts meta">이 주제를 많이 다룬 사람: ${r.experts.map(e => `<b>${esc(e.owner)}</b>`).join(", ")} — 아래 사례를 보고 궁금한 건 이분들께 물어보세요.</div>`;
+  } else h += `<div class="meta" style="margin-bottom:8px">최근 사례</div>`;
+  if (llmOn && $("#f-llm").checked && q) h += `<div class="box answer" id="answer"><h3>AI 요약</h3><span class="meta">사례를 읽고 정리하는 중…</span></div>`;
+  h += r.cards.map(c => `<div class="box kcard result" data-card="${c.id}" data-thread="${c.thread_id || ""}">
+      <h3>★ ${hl(c.title, r.terms)}</h3><div class="kbody">${hl(c.body.slice(0, 400), r.terms)}${c.body.length > 400 ? "…" : ""}</div>
+      <div class="chips"><span class="chip cardtag">노하우 카드</span>${c.author ? `<span class="chip owner">${esc(c.author)}</span>` : ""}${(c.tags || "").split(",").filter(Boolean).map(t => `<span class="chip">${esc(t.trim())}</span>`).join("")}</div></div>`).join("");
+  return h;
+}
+
+function renderThread(t) {
+  return `<div class="box result" data-thread="${t.id}" data-msg="${t.best_message || ""}">
+    <h3>${hl(t.subject, lastTerms)}</h3>
+    <div class="meta">${d10(t.first_date)}${t.last_date && d10(t.last_date) !== d10(t.first_date) ? " ~ " + d10(t.last_date) : ""} · 메일 ${t.count}통 · 참여 ${esc(t.participants.slice(0, 5).join(", "))}${t.participants.length > 5 ? " 외" : ""}</div>
+    <div class="snip">${hl(t.snippet, lastTerms)}</div>
+    <div class="chips">${t.owners.map(o => `<span class="chip owner">${esc(o)} 메일함</span>`).join("")}
+      ${t.card ? `<span class="chip cardtag">★ ${esc(t.card.title)}</span>` : ""}
+      ${(t.missing || []).map(m => `<span class="chip miss">'${esc(m)}' 없음</span>`).join("")}
+      ${t.attachments.slice(0, 4).map(a => `<span class="chip">📎 ${esc(a)}</span>`).join("")}</div>
+  </div>`;
+}
+
+function bindResults() {
+  document.querySelectorAll("#results .result").forEach(el => el.onclick = () => {
+    if (el.dataset.card && !el.dataset.thread) { showTab("cards"); editCard(+el.dataset.card); return; }
+    openThread(+el.dataset.thread, +el.dataset.msg);
+  });
+}
+
+async function askLLM(q) {
+  try {
+    const r = await api("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, owner: $("#f-owner").value }) });
+    const el = $("#answer"); if (!el || q !== lastQuery) return;
+    el.innerHTML = "<h3>AI 요약</h3>" + (r.answer ? esc(r.answer) + '<div class="meta" style="margin-top:8px">AI가 아래 사례만 읽고 정리한 것이에요. 원문을 꼭 확인하세요.</div>' : `<span class="err">${esc(r.answer_error)}</span>`);
+  } catch (e) { const el = $("#answer"); if (el) el.innerHTML = `<h3>AI 요약</h3><span class="err">${esc(e.message)}</span>`; }
+}
+
+/* 사례 상세 */
+$("#drawer").onclick = e => { if (e.target.id === "drawer") $("#drawer").classList.remove("on"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("#drawer").classList.remove("on"); });
+
+async function openThread(id, hitMsg) {
+  const t = await api("/api/thread/" + id);
+  const sheet = $("#sheet");
+  sheet.innerHTML = `<div class="sheet-top"><h2>${esc(t.subject)}</h2>
+      <button class="ghost" id="t-card">노하우 카드로 정리</button>
+      <button class="ghost" id="t-hide" title="개인 메일 등 팀에 보일 필요 없는 메일">검색에서 빼기</button>
+      <button class="ghost" id="t-close">닫기</button></div>
+    <div class="meta" style="margin-bottom:12px">${d10(t.first_date)} ~ ${d10(t.last_date)} · ${t.messages.length}통 ·
+      메일함: ${t.owners.map(o => `<b>${esc(o)}</b>`).join(", ")} · 참여: ${esc(t.participants.join(", "))}</div>
+    ${t.cards.map(c => `<div class="box kcard"><h3>★ ${esc(c.title)}</h3><div class="kbody">${esc(c.body)}</div><div class="meta">${esc(c.author)} · ${esc(c.updated)}</div></div>`).join("")}
+    ${t.messages.map(m => `<div class="msg ${m.id === hitMsg ? "hit" : ""}" id="m${m.id}">
+      <div class="hd"><b>${esc(m.sender)}</b><span class="meta">${esc(m.date)}</span><span class="meta">${esc(m.folder)}</span></div>
+      <div class="rc">받는 사람: ${esc(m.to)}${m.cc ? " · 참조: " + esc(m.cc) : ""}</div>
+      ${m.attachments.length ? `<div class="chips">${m.attachments.map(a => `<span class="chip">📎 ${esc(a)}</span>`).join("")}</div>` : ""}
+      <pre>${hl(m.body_new, lastTerms)}</pre>
+      ${m.body ? `<details><summary>이전 메일 인용 포함 원문 보기</summary><pre>${esc(m.body)}</pre></details>` : ""}
+    </div>`).join("")}`;
+  $("#drawer").classList.add("on");
+  sheet.scrollTop = 0;
+  if (hitMsg) setTimeout(() => document.getElementById("m" + hitMsg)?.scrollIntoView({ block: "center" }), 50);
+  $("#t-close").onclick = () => $("#drawer").classList.remove("on");
+  $("#t-hide").onclick = async () => {
+    if (!confirm("이 사례를 팀 검색에서 뺄까요? (DB에서 지우지는 않고 숨깁니다)")) return;
+    await api("/api/hide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ thread_id: id }) });
+    $("#drawer").classList.remove("on"); document.querySelector(`.result[data-thread="${id}"]`)?.remove();
+  };
+  $("#t-card").onclick = () => {
+    $("#drawer").classList.remove("on"); showTab("cards"); resetCard();
+    $("#c-thread").value = id; $("#c-title").value = t.subject;
+    $("#c-link").textContent = "연결된 메일 스레드: " + t.subject;
+    $("#c-body").value = "배경:\n\n진행 순서:\n1. \n\n관련 부서·담당자:\n\n필요 서류:\n\n주의할 점:\n";
+    $("#c-title").focus();
+  };
+}
+
+/* 노하우 카드 */
+let cards = [];
+async function loadCards() {
+  cards = await api("/api/cards");
+  $("#card-list").innerHTML = cards.length ? cards.map(c => `<div class="box kcard result" data-id="${c.id}">
+      <h3>★ ${esc(c.title)}</h3><div class="kbody">${esc(c.body.slice(0, 220))}${c.body.length > 220 ? "…" : ""}</div>
+      <div class="chips">${c.author ? `<span class="chip owner">${esc(c.author)}</span>` : ""}${(c.tags || "").split(",").filter(Boolean).map(t => `<span class="chip">${esc(t.trim())}</span>`).join("")}<span class="chip">${esc(c.updated)}</span></div></div>`).join("")
+    : '<div class="empty">아직 카드가 없어요</div>';
+  document.querySelectorAll("#card-list .result").forEach(el => el.onclick = () => editCard(+el.dataset.id));
+}
+function editCard(id) {
+  const c = cards.find(x => x.id === id);
+  if (!c) { loadCards().then(() => { if (cards.find(x => x.id === id)) editCard(id); }); return; }
+  $("#card-form-title").innerHTML = '카드 고치기 <button class="ghost" id="c-del" style="float:right">삭제</button>';
+  $("#c-id").value = c.id; $("#c-thread").value = c.thread_id || ""; $("#c-title").value = c.title;
+  $("#c-tags").value = c.tags || ""; $("#c-body").value = c.body; $("#c-author").value = c.author || "";
+  $("#c-link").innerHTML = c.thread_id ? `<a href="#" id="c-open">연결된 메일 스레드 열기</a>` : "";
+  $("#c-open")?.addEventListener("click", e => { e.preventDefault(); openThread(c.thread_id); });
+  $("#c-del").onclick = async () => { if (!confirm("이 카드를 지울까요?")) return; await api("/api/cards/" + c.id, { method: "DELETE" }); resetCard(); loadCards(); loadStats(); };
+}
+function resetCard() {
+  $("#card-form-title").textContent = "새 노하우 카드";
+  ["#c-id", "#c-thread", "#c-title", "#c-tags", "#c-body"].forEach(s => $(s).value = "");
+  $("#c-author").value = localStorageGet("author"); $("#c-link").textContent = "";
+}
+$("#c-reset").onclick = resetCard;
+$("#c-save").onclick = async () => {
+  try {
+    localStorageSet("author", $("#c-author").value);
+    const r = await api("/api/cards", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      id: $("#c-id").value || null, thread_id: $("#c-thread").value || null, title: $("#c-title").value,
+      tags: $("#c-tags").value, body: $("#c-body").value, author: $("#c-author").value }) });
+    await loadCards(); editCard(r.id); loadStats();
+  } catch (e) { alert(e.message); }
+};
+function localStorageGet(k) { try { return localStorage.getItem("mb_" + k) || ""; } catch { return ""; } }
+function localStorageSet(k, v) { try { localStorage.setItem("mb_" + k, v); } catch {} }
+
+/* 메일 넣기 */
+const drop = $("#drop");
+drop.onclick = () => $("#u-file").click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); upload([...e.dataTransfer.files]); };
+$("#u-file").onchange = e => upload([...e.target.files]);
+$("#u-owner").value = localStorageGet("author");
+(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 1); $("#u-since").value = d.toISOString().slice(0, 10); })();
+
+async function upload(files) {
+  const owner = $("#u-owner").value.trim();
+  if (!owner) { alert("메일함 주인 이름을 먼저 입력해 주세요"); $("#u-owner").focus(); return; }
+  localStorageSet("author", owner);
+  for (const f of files) {
+    const row = document.createElement("div");
+    row.innerHTML = `<div class="note">${esc(f.name)} (${(f.size / 1048576).toFixed(0)}MB) 올리는 중…</div><div class="bar"><i></i></div>`;
+    $("#u-progress").appendChild(row);
+    await new Promise(res => {
+      const x = new XMLHttpRequest();
+      x.open("PUT", "/api/upload");
+      x.setRequestHeader("X-Owner", encodeURIComponent(owner));
+      x.setRequestHeader("X-Filename", encodeURIComponent(f.name));
+      x.setRequestHeader("X-Since", $("#u-since").value);
+      x.upload.onprogress = e => { if (e.lengthComputable) row.querySelector("i").style.width = (e.loaded / e.total * 100) + "%"; };
+      x.onload = () => {
+        let j = {}; try { j = JSON.parse(x.responseText); } catch {}
+        row.querySelector(".note").innerHTML = x.status === 200 ? `${esc(f.name)} 업로드 완료 → 적재 대기열에 들어갔어요` : `<span class="err">${esc(f.name)}: ${esc(j.error || x.statusText)}</span>`;
+        res(); loadJobs();
+      };
+      x.onerror = () => { row.querySelector(".note").innerHTML = `<span class="err">${esc(f.name)}: 업로드 실패</span>`; res(); };
+      x.send(f);
+    });
+  }
+}
+
+let jobTimer = null;
+async function loadJobs() {
+  const js = await api("/api/jobs");
+  $("#jobs").innerHTML = js.length ? `<table><tr><th>파일</th><th>주인</th><th>상태</th><th>읽음</th><th>신규</th><th>겹침</th><th>반복</th><th>제외</th></tr>` +
+    js.map(j => `<tr><td>${esc(j.file)}</td><td>${esc(j.owner)}</td><td class="${j.status === "오류" ? "err" : ""}" title="${esc(j.error || "")}">${esc(j.status)}</td><td>${j.seen}</td><td>${j.added}</td><td>${j.merged}</td><td>${j.dup}</td><td>${j.skipped}</td></tr>`).join("") + "</table>" : "없음";
+  const busy = js.some(j => j.status === "대기" || j.status === "처리 중");
+  clearTimeout(jobTimer);
+  if (busy) jobTimer = setTimeout(loadJobs, 2000); else loadStats();
+}
+
+loadStats().then(() => run(true));
+</script>
+</body>
+</html>
